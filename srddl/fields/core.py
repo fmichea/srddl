@@ -26,7 +26,8 @@ class Field(AbstractField):
         return struct.unpack_from(sig, instance.buf, self.offset(instance))[0]
 
     def __set__(self, instance, value):
-        sig, val = self._signature(instance), ((1 << (self._size * 8)) - 1) & value
+        sig = self._signature(instance)
+        val = ((1 << (self.size(instance) * 8)) - 1) & value
         return struct.pack_into(sig, instance.buf, self.offset(instance), val)
 
     def size(self, instance):
