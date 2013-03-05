@@ -11,8 +11,12 @@ class A(sm.Struct):
     a_third = sf.SuperField(B)
     a_fourth = sf.Array(4, sf.Field())
     a_fifth = sf.ByteArrayField('Fifth field', size=10)
+    a_sixth = sf.Padding(2)
+    a_seventh = sf.Field(size=sf.Field_Sizes.INT16)
+    a_pad = sf.Padding(33, mode=sf.PaddingMode.FILL)
 
-data = bytearray(bytes.fromhex('2adeadbeefefbeadde4243444500010203040506070809'))
+data = '2adeadbeefefbeadde424344450001020304050607080900002a2b000000000000'
+data = bytearray.fromhex(data)
 
 a = A(data, 0)
 
@@ -24,19 +28,21 @@ for i in range(4):
     assert(a.a_fourth[i] == (0x42 + i))
 
 assert(a.a_fifth == bytearray.fromhex('00010203040506070809'))
+assert(a.a_seventh == 0x2b2a)
+assert(a.size() == 33)
 
-print('data:', data)
-a.a_first = 0x01
-assert(a.a_first == 0x1)
-print('data:', data)
-a.a_fourth[1] = 0x66
-assert(a.a_fourth[1] == 0x66)
-print('data:', data)
-a.a_fourth[1:3] = [0x66, 0x60]
-print('data:', data)
-a.a_second = 0x08048832ff
-print('data:', data)
-a.a_second = 0
-print('data:', data)
-a.a_second = -1
-print('data:', data)
+#print('data:', data)
+#a.a_first = 0x01
+#assert(a.a_first == 0x1)
+#print('data:', data)
+#a.a_fourth[1] = 0x66
+#assert(a.a_fourth[1] == 0x66)
+#print('data:', data)
+#a.a_fourth[1:3] = [0x66, 0x60]
+#print('data:', data)
+#a.a_second = 0x08048832ff
+#print('data:', data)
+#a.a_second = 0
+#print('data:', data)
+#a.a_second = -1
+#print('data:', data)
