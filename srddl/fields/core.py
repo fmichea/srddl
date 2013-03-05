@@ -67,12 +67,12 @@ class ByteArrayField(AbstractField):
 
 
 class Value(int):
-    def __init__(self, value, *args):
+    def __init__(self, value, *args, **kwargs):
         self.value = value
         self.short_desc = args[0] if len(args) >= 1 else None
         self.long_desc = args[1] if len(args) >= 2 else None
 
-    def __new__(cls, value, *args):
+    def __new__(cls, value, *args, **kwargs):
         # Since int class is not mutable, must construct it with the right value
         # using __new__ method.
         return super(Value, cls).__new__(cls, value)

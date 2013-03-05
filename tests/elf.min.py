@@ -8,8 +8,7 @@ import srddl.models as sm
 
 # Atomic types.
 class ElfN_Addr(sf.Field):
-    @property
-    def size(self):
+    def size(self, instance):
         return self.root[0].e_indent.ei_class / 8
 
 class ElfN_Off(ElfN_Addr): pass
@@ -20,11 +19,11 @@ EI_INDENT = 16
 class ElfN_Ehdr(sm.Struct):
     class ElfN_Ehdr__Indent(sm.Struct):
         ei_mag = sf.ByteArrayField('Magic', 4, valid=sh.equals(b'\x7fELF'))
-        ei_class = sf.ByteField('Binary Architecture')
-        ei_data = sf.ByteField('Data encoding (endianess)')
-        ei_version = sf.ByteField('ELF specification number')
-        ei_osabi = sf.ByteField('Operating system ABI')
-        ei_abiversion = sf.ByteField('ABI Version')
+        ei_class = sf.Field('Binary Architecture')
+        ei_data = sf.Field('Data encoding (endianess)')
+        ei_version = sf.Field('ELF specification number')
+        ei_osabi = sf.Field('Operating system ABI')
+        ei_abiversion = sf.Field('ABI Version')
         ei_pad = sf.Padding(EI_INDENT, mode=sf.PaddingMode.FILL)
 
     e_indent = sf.SuperField(ElfN_Ehdr__Indent)

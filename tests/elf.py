@@ -20,24 +20,24 @@ class ElfN_Ehdr(sm.Struct):
     class ElfN_Ehdr__Indent(sm.Struct):
         ei_mag = sf.ByteArrayField('Magic', 4, valid=sh.equals(b'\x7fELF'))
 
-        ei_class = sf.ByteField('Binary architecture', values=[
+        ei_class = sf.Field('Binary architecture', values=[
             sf.Value(0, 'ELFCLASSNONE', 'Invalid Class', valid=sh.invalid),
             sf.Value(1, 'ELFCLASS32', '32 bits architecture'),
             sf.Value(2, 'ELFCLASS64', '64 bits architecture'),
         ])
 
-        ei_data = sf.ByteField('Data encoding (endianess)', values=[
+        ei_data = sf.Field('Data encoding (endianess)', values=[
             sf.Value(0, 'ELFDATANONE', 'Unknown data format'),
             sf.Value(1, 'ELFDATA2LSB', 'Two\'s complement, little-endian'),
             sf.Value(2, 'ELFDATA2MSB', 'Two\'s complement, big-endian'),
         ])
 
-        ei_version = sf.ByteField('ELF specification number', values=[
+        ei_version = sf.Field('ELF specification number', values=[
             sf.Value(0, 'EV_NONE', 'Invalid version'),
             sf.Value(1, 'EV_CURRENT', 'Current version'),
         ])
 
-        ei_osabi = sf.ByteField('Operating system ABI', values=[
+        ei_osabi = sf.Field('Operating system ABI', values=[
             sf.Value(0x0, 'ELFOSABI_NONE', 'Same as ELFOSABI_SYSV'),
             sf.Value(0x1, 'ELFOSABI_SYSV', 'UNIX System V ABI'),
             sf.Value(0x2, 'ELFOSABI_HPUX', 'HP-UX ABI'),
@@ -51,7 +51,7 @@ class ElfN_Ehdr(sm.Struct):
             sf.Value(0xA, 'ELFOSABI_STANDALONE', 'Stand-alone (embedded) ABI'),
         ])
 
-        ei_abiversion = sf.ByteField('ABI Version'),
+        ei_abiversion = sf.Field('ABI Version'),
 
         ei_pad = sf.Padding(EI_INDENT),
 
