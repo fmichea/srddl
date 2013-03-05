@@ -1,8 +1,11 @@
-from srddl.fields import Field
+# srddl/fields/padding.py - Padding fields used to fill blanks.
+# Author: Franck Michea <franck.michea@gmail.com>
+# License: New BSD License (See LICENSE)
 
-def enum(**enums):
-    return type('Enum', (), enums)
+import srddl.core.helpers as sch
 
-PaddingMode = enum(TAKE=0, FILL=1)
+from srddl.core.abstract import AbstractField
 
-class Padding(Field): pass
+PaddingMode = sch.enum(TAKE=0, FILL=1)
+
+class Padding(AbstractField): pass
