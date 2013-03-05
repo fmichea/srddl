@@ -4,7 +4,7 @@
 
 import srddl.core.helpers as sch
 
-from srddl.core.abstract import AbstractField
+from srddl.core.fields import AbstractField
 
 PaddingMode = sch.enum(TAKE=0, FILL=1)
 

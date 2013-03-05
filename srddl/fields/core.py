@@ -4,7 +4,7 @@
 
 import struct
 
-from srddl.core.abstract import AbstractField
+from srddl.core.fields import AbstractField
 
 import srddl.exceptions as se
 import srddl.core.helpers as sch

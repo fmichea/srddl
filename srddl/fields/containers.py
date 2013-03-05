@@ -8,7 +8,7 @@ from itertools import islice
 
 import srddl.exceptions as se
 
-from srddl.core.abstract import AbstractField
+from srddl.core.fields import AbstractField
 from srddl.models import Struct
 
 class AbstractContainerField(AbstractField):

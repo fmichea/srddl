@@ -4,7 +4,7 @@
 import collections
 import functools
 
-from srddl.core.abstract import AbstractField
+from srddl.core.fields import AbstractField
 
 class _SrddlInternal:
     '''
