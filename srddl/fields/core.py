@@ -20,10 +20,14 @@ class Field(AbstractField):
             raise ValueError("'size' is not valid.")
         self._signed = kwargs.get('signed', False)
         self._endianess = kwargs.get('endianess', Field_Endianess.LITTLE)
+        self._values = dict()
+        for it in kwargs.get('values', []):
+            self._values[it.value] = it
 
     def __get__(self, instance, owner=None):
         sig = self._signature(instance)
-        return struct.unpack_from(sig, instance.buf, self.offset(instance))[0]
+        ret = struct.unpack_from(sig, instance.buf, self.offset(instance))[0]
+        return self._values.get(ret, ret)
 
     def __set__(self, instance, value):
         sig = self._signature(instance)
@@ -62,8 +66,18 @@ class ByteArrayField(AbstractField):
         return '{}s'.format(self.size(instance))
 
 
-class Value:
+class Value(int):
     def __init__(self, value, *args):
         self.value = value
         self.short_desc = args[0] if len(args) >= 1 else None
         self.long_desc = args[1] if len(args) >= 2 else None
+
+    def __new__(cls, value, *args):
+        # Since int class is not mutable, must construct it with the right value
+        # using __new__ method.
+        return super(Value, cls).__new__(cls, value)
+
+    def __repr__(self):
+        return '<{!r} at {} with value {} ({})>'.format(
+            self.__class__, id(self), self.value, self.short_desc or ''
+        )

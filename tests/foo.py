@@ -14,8 +14,9 @@ class A(sm.Struct):
     a_sixth = sf.Padding(2)
     a_seventh = sf.Field(size=sf.Field_Sizes.INT16)
     a_pad = sf.Padding(33, mode=sf.PaddingMode.FILL)
+    a_eigth = sf.Field(values=[sf.Value(0x4, 'VALUE')])
 
-data = '2adeadbeefefbeadde424344450001020304050607080900002a2b000000000000'
+data = '2adeadbeefefbeadde424344450001020304050607080900002a2b00000000000004'
 data = bytearray.fromhex(data)
 
 a = A(data, 0)
@@ -29,7 +30,9 @@ for i in range(4):
 
 assert(a.a_fifth == bytearray.fromhex('00010203040506070809'))
 assert(a.a_seventh == 0x2b2a)
-assert(a.size() == 33)
+assert(a.size() == 34)
+assert(a.a_eigth == 4)
+print('Eigth:', repr(a.a_eigth))
 
 #print('data:', data)
 #a.a_first = 0x01
