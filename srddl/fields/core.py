@@ -58,3 +58,10 @@ class ByteArrayField(AbstractField):
 
     def _signature(self, instance):
         return '{}s'.format(self.size(instance))
+
+
+class Value:
+    def __init__(self, value, *args):
+        self.value = value
+        self.short_desc = args[0] if len(args) >= 1 else None
+        self.long_desc = args[1] if len(args) >= 2 else None
