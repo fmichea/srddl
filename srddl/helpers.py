@@ -5,10 +5,15 @@
 '''Some helper functions to help writing templates.'''
 
 def invalid(val):
-    '''Always says the value is invalid.'''
+    '''Value is alwaus considered invalid.'''
     return False
 
+def valid(val):
+    '''Value is always considered valid.'''
+    return True
+
 def equals(expected):
+    '''Checks that the value matches the expected value.'''
     def _equals(value):
         return value == bytearray(expected)
     return _equals
