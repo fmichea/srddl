@@ -21,17 +21,17 @@ class Field(AbstractField):
         self._endianess = kwargs.get('endianess', Field_Endianess.LITTLE)
 
     def __get__(self, instance, owner=None):
-        sig = self._signature()
+        sig = self._signature(instance)
         return struct.unpack_from(sig, instance.buf, self.offset(instance))[0]
 
     def __set__(self, instance, value):
-        sig, val = self._signature(), ((1 << (self._size * 8)) - 1) & value
+        sig, val = self._signature(instance), ((1 << (self._size * 8)) - 1) & value
         return struct.pack_into(sig, instance.buf, self.offset(instance), val)
 
     def size(self, instance):
         return self._size
 
-    def _signature(self):
+    def _signature(self, instance):
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
-        sig = self._endianess + 'bhiq'[log2[self._size]]
+        sig = self._endianess + 'bhiq'[log2[self.size(instance)]]
         return (sig if self._signed else sig.upper())
