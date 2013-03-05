@@ -14,6 +14,7 @@ Field_Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
 
 class Field(AbstractField):
     def __init__(self, *args, **kwargs):
+        self._desc = args[0] if len(args) >= 1 else None
         self._size = kwargs.get('size', 1)
         if self._size not in Field_Sizes.values():
             raise ValueError("'size' is not valid.")
