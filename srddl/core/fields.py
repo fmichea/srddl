@@ -33,6 +33,14 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
                     raise AttributeError("Can't set without an instance.")
                 return __set__(self, instance, value)
             kwds['__set__'] = wrapper
+
+        _field_offset = kwds.get('_field_offset')
+        if _field_offset is not None:
+            @functools.wraps(_field_offset)
+            @functools.lru_cache()
+            def wrapper(*args, **kwargs):
+                return _field_offset(*args, **kwargs)
+            kwds['_field_offset'] = wrapper
         return super().__new__(cls, name, bases, namespace, **kwds)
 
 

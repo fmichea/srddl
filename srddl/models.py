@@ -30,6 +30,7 @@ class _SrddlInternal:
             res += field_desc.__get__(instance).size
         return res
 
+    @functools.lru_cache()
     def _field_offset(self, instance, field):
         offset = instance.offset
         for field_name, field_desc in self.namespace.items():
