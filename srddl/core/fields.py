@@ -115,6 +115,23 @@ class AbstractField(metaclass=_MetaAbstractField):
     def _iinitialized(self, instance, field):
         return instance._srddl.initialized_fields.get(id(field), False)
 
+    def _subfield_value(self, instance, field, type=int):
+        if isinstance(field, AbstractField):
+            if instance._srddl._field_offset(instance, field) is None:
+                raise Exception('fail')
+            res = field.__get__(instance).value
+            if not isinstance(res, type):
+                raise TypeError
+            return res
+        elif isinstance(field, type):
+            return field
+        elif inspect.ismethod(field) or inspect.isfunction(field):
+            res = field(instance)
+            if not isinstance(res, type):
+                raise Exception('fail3')
+            return res
+        raise Exception('fail2')
+
 
 @functools.total_ordering
 class BoundValue(metaclass=_MetaAbstractDescriptor):

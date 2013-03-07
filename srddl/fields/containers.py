@@ -96,8 +96,8 @@ class Array(AbstractContainerField):
             raise se.ArrayError()
 
     def initialize(self, instance):
-        data = []
-        for _ in range(self._dim):
+        data, dim = [], self._subfield_value(instance, self._dim)
+        for _ in range(dim):
             tmp = copy.copy(self._desc)
             tmp.initialize(instance)
             data.append(tmp)
