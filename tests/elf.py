@@ -1,15 +1,16 @@
 # This file only is here to help me gather what I want to have as an API from
 # the point of view of the user (writer of a template).
 
+import sys
+
 import srddl.helpers as sh
 import srddl.fields as sf
 import srddl.models as sm
 
 # Atomic types.
-class ElfN_Addr(sf.Field):
-    @property
-    def size(self):
-        return self.root[0].e_indent.ei_class / 8
+class ElfN_Addr(sf.IntField):
+    def _isize(self, struct):
+        return struct.e_indent.ei_class.value * 4
 
 class ElfN_Off(ElfN_Addr): pass
 
@@ -18,26 +19,26 @@ EI_INDENT = 16
 
 class ElfN_Ehdr(sm.Struct):
     class ElfN_Ehdr__Indent(sm.Struct):
-        ei_mag = sf.ByteArrayField('Magic', 4, valid=sh.equals(b'\x7fELF'))
+        ei_mag = sf.ByteArrayField('Magic', size=4, valid=sh.equals(b'\x7fELF'))
 
-        ei_class = sf.Field('Binary architecture', values=[
+        ei_class = sf.IntField('Binary architecture', values=[
             sf.Value(0, 'ELFCLASSNONE', 'Invalid Class', valid=sh.invalid),
             sf.Value(1, 'ELFCLASS32', '32 bits architecture'),
             sf.Value(2, 'ELFCLASS64', '64 bits architecture'),
         ])
 
-        ei_data = sf.Field('Data encoding (endianess)', values=[
+        ei_data = sf.IntField('Data encoding (endianess)', values=[
             sf.Value(0, 'ELFDATANONE', 'Unknown data format'),
             sf.Value(1, 'ELFDATA2LSB', 'Two\'s complement, little-endian'),
             sf.Value(2, 'ELFDATA2MSB', 'Two\'s complement, big-endian'),
         ])
 
-        ei_version = sf.Field('ELF specification number', values=[
+        ei_version = sf.IntField('ELF specification number', values=[
             sf.Value(0, 'EV_NONE', 'Invalid version'),
             sf.Value(1, 'EV_CURRENT', 'Current version'),
         ])
 
-        ei_osabi = sf.Field('Operating system ABI', values=[
+        ei_osabi = sf.IntField('Operating system ABI', values=[
             sf.Value(0x0, 'ELFOSABI_NONE', 'Same as ELFOSABI_SYSV'),
             sf.Value(0x1, 'ELFOSABI_SYSV', 'UNIX System V ABI'),
             sf.Value(0x2, 'ELFOSABI_HPUX', 'HP-UX ABI'),
@@ -51,14 +52,14 @@ class ElfN_Ehdr(sm.Struct):
             sf.Value(0xA, 'ELFOSABI_STANDALONE', 'Stand-alone (embedded) ABI'),
         ])
 
-        ei_abiversion = sf.Field('ABI Version'),
+        ei_abiversion = sf.IntField('ABI Version')
 
-        ei_pad = sf.Padding(EI_INDENT),
+        ei_pad = sf.Padding(EI_INDENT, mode=sf.PaddingMode.FILL)
 
 
     e_indent = sf.SuperField(ElfN_Ehdr__Indent)
 
-    e_type = sf.Field('Object file type', size=2, values=[
+    e_type = sf.IntField('Object file type', size=sf.Field_Sizes.INT16, values=[
         sf.Value(0, 'ET_NONE', 'Unknown type.'),
         sf.Value(1, 'ET_REL', 'Relocatable file.'),
         sf.Value(2, 'ET_EXEC', 'Executable file.'),
@@ -66,11 +67,11 @@ class ElfN_Ehdr(sm.Struct):
         # ET_CORE left appart for testing purposes.
     ])
 
-    e_machine = sf.Field('Machine architecture', size=2, values=[
+    e_machine = sf.IntField('Machine architecture', size=sf.Field_Sizes.INT16, values=[
         # Not necessary though, this is just here for documentation purposes.
     ])
 
-    e_version = sf.Field('File version', size=4, values=[
+    e_version = sf.IntField('File version', size=sf.Field_Sizes.INT32, values=[
         sf.Value(0, 'EV_NONE', 'Invalid version'),
         sf.Value(1, 'EV_CURRENT', 'Current version'),
     ])
@@ -78,10 +79,21 @@ class ElfN_Ehdr(sm.Struct):
     e_entry = ElfN_Addr('Entry point of the program')
     e_phoff = ElfN_Off('Program header table offset')
     e_shoff = ElfN_Off('Section header table offset')
-    e_flags = sf.Field('Machine flags (unused)', size=4)
-    e_ehsize = sf.Field('ELF Header size', size=2)
-    e_phentsize = sf.Field('Program header entry size', size=2)
-    e_phnum = sf.Field('Number of entries in program header table', size=2)
-    e_shentsize = sf.Field('Section header entry size', size=2)
-    e_shnum = sf.Field('Number of entrues in section heade table', size=2)
-    e_shstrndx = sf.Field('Index of string table section header', size=2)
+    e_flags = sf.IntField('Machine flags (unused)', size=sf.Field_Sizes.INT32)
+    e_ehsize = sf.IntField('ELF Header size', size=sf.Field_Sizes.INT16)
+    e_phentsize = sf.IntField('Program header entry size', size=sf.Field_Sizes.INT16)
+    e_phnum = sf.IntField('Number of entries in program header table', size=sf.Field_Sizes.INT16)
+    e_shentsize = sf.IntField('Section header entry size', size=sf.Field_Sizes.INT16)
+    e_shnum = sf.IntField('Number of entrues in section heade table', size=sf.Field_Sizes.INT16)
+    e_shstrndx = sf.IntField('Index of string table section header', size=sf.Field_Sizes.INT16)
+
+if __name__ == '__main__':
+    prog = '/bin/ls' if len(sys.argv) == 1 else sys.argv[1]
+    with open(prog, 'rb') as f:
+        s = ElfN_Ehdr(f.read(), 0)
+        for field_name in s._srddl.fields:
+            val = getattr(s, field_name)
+            print(field_name + ':', val)
+            if field_name == 'e_indent':
+                for it in val._srddl.fields:
+                    print('\t' + it + ':', getattr(val, it))
