@@ -24,10 +24,10 @@ class _SrddlInternal:
                 self.namespace[field_name] = field
                 field.initialize(self.instance)
 
-    def size(self, instance):
+    def _isize(self, instance):
         res = 0
         for field_name, field_desc in self.namespace.items():
-            res += field_desc.size(instance)
+            res += field_desc.__get__(instance).size
         return res
 
     def _field_offset(self, instance, field):
@@ -38,7 +38,7 @@ class _SrddlInternal:
             tmp = field_desc._field_offset(instance, field)
             if tmp is not None:
                 return offset + tmp
-            offset += field_desc.size(instance)
+            offset += field_desc.__get__(instance).size
         return None
 
 
@@ -85,5 +85,6 @@ class Struct(metaclass=_MetaStruct):
     def __init__(self, buf, offset):
         self.buf, self.offset = buf, offset
 
+    @property
     def size(self):
-        return self._srddl.size(self)
+        return self._srddl._isize(self)

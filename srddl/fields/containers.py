@@ -8,7 +8,7 @@ from itertools import islice
 
 import srddl.exceptions as se
 
-from srddl.core.fields import AbstractField
+from srddl.core.fields import AbstractField, BoundValue
 from srddl.models import Struct
 
 class AbstractContainerField(AbstractField):
@@ -18,8 +18,8 @@ class AbstractContainerField(AbstractField):
     def __set__(self, instance, value):
         raise se.ROContainerError()
 
-    def size(self, instance):
-        return self._get_data(instance).size()
+    def _isize(self, instance):
+        return self._get_data(instance).size
 
 
 class SuperField(AbstractContainerField):
@@ -34,7 +34,7 @@ class SuperField(AbstractContainerField):
         self._cls = cls
 
     def initialize(self, instance):
-        self._set_data(instance, self._cls(instance.buf, self.offset(instance)))
+        self._set_data(instance, self._cls(instance.buf, self._ioffset(instance)))
 
     def _field_offset(self, instance, field):
         if field is self._get_data(instance):
@@ -43,53 +43,49 @@ class SuperField(AbstractContainerField):
 
 
 class Array(AbstractContainerField):
-    class _Inner:
-        def __init__(self, instance, data):
-            self.instance, self.data = instance, data
-
-        def __repr__(self):
-            return '<{} at {} containing {} for instance {}>'.format(
-                repr(self.__class__)[8:-2], hex(id(self)),
-                list(self), self.instance
-            )
-
+    class _Inner(BoundValue):
         def __len__(self):
-            return len(self.data)
+            return len(self._value)
 
         def __getitem__(self, idx):
             if isinstance(idx, slice):
                 res = []
-                for it in islice(self.data, idx.start, idx.stop, idx.step):
-                    res.append(it.__get__(self.instance))
+                for it in islice(self._value, idx.start, idx.stop, idx.step):
+                    res.append(it.__get__(self._instance))
             else:
-                res = self.data[idx].__get__(self.instance)
+                res = self._value[idx].__get__(self._instance)
             return res
 
         def __setitem__(self, idx, value):
             if isinstance(idx, slice):
-                tmp = zip(islice(self.data, idx.start, idx.stop, idx.step), value)
+                tmp = zip(islice(self._value, idx.start, idx.stop, idx.step), value)
                 for it, value in tmp:
-                    it.__set__(self.instance, value)
+                    it.__set__(self._instance, value)
             else:
-                self.data[idx].__set__(self.instance, value)
+                self._value[idx].__set__(self._instance, value)
 
         def __iter__(self):
-            for it in self.data:
-                yield it.__get__(self.instance)
+            for it in self._value:
+                yield it.__get__(self._instance)
 
         def _field_offset(self, instance, field):
             offset = 0
-            for it in self.data:
+            for it in self._value:
                 if it is field:
                     return offset
                 tmp = it._field_offset(instance, field)
                 if tmp is not None:
                     return offset + tmp
-                offset += it.size(instance)
+                offset += it.__get__(instance).size
             return None
 
+        @property
         def size(self):
-            return sum(it.size(self.instance) for it in self.data)
+            return sum(it.__get__(self._instance).size for it in self._value)
+
+        @property
+        def value(self):
+            return list(iter(self))
 
 
     def __init__(self, dim, desc):
@@ -98,12 +94,14 @@ class Array(AbstractContainerField):
             raise se.ArrayError()
 
     def initialize(self, instance):
-        res = []
+        data = []
         for _ in range(self._dim):
             tmp = copy.copy(self._desc)
             tmp.initialize(instance)
-            res.append(tmp)
-        self._set_data(instance, Array._Inner(instance, res))
+            data.append(tmp)
+        res = Array._Inner(instance, self._ioffset(instance), None)
+        res.initialize(data)
+        self._set_data(instance, res)
 
     def _field_offset(self, instance, field):
         return self._get_data(instance)._field_offset(instance, field)
