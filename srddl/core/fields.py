@@ -15,8 +15,9 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
     '''
 
     def __new__(cls, name, bases, kwds):
-        # Wrap __get__ to always implement instance == None case. It also
-        # fetches the right instance of struct in case we are in a container.
+        # Wrap __get__ to always implement instance == None case returning the
+        # descriptor itself. It also fetches the right instance of struct in
+        # case we are in a container.
         __get__ = kwds.get('__get__')
         if __get__ is not None:
             @functools.wraps(__get__)
@@ -28,6 +29,8 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
                 return __get__(self, instance, owner=owner)
             kwds['__get__'] = wrapper
 
+        # The descriptor is not writable on a model level, so it raises an
+        # attribute error when set without an instance.
         __set__ = kwds.get('__set__')
         if __set__ is not None:
             @functools.wraps(__set__)
@@ -49,6 +52,8 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 return _field_offset(*args, **kwargs)
             kwds['_field_offset'] = wrapper
 
+        # When referencing a field from another, we basically need to know if
+        # the field is initialized or not, so if we can fetch its value or not.
         initialize = kwds.get('initialize')
         if initialize is not None:
             @functools.wraps(initialize)
