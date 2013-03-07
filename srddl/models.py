@@ -34,7 +34,7 @@ class _SrddlInternal:
 
     @functools.lru_cache()
     def _field_offset(self, instance, field):
-        offset = instance.offset
+        offset = self.instance.offset
         for field_name, field_desc in self.namespace.items():
             if field_desc is field:
                 return offset
@@ -42,10 +42,10 @@ class _SrddlInternal:
             # initialized yet, during initialization of one field.
             if not self._iinitialized(field_desc):
                 return None
-            tmp = field_desc._field_offset(instance, field)
+            tmp = field_desc._field_offset(self.instance, field)
             if tmp is not None:
                 return offset + tmp
-            offset += field_desc.__get__(instance).size
+            offset += field_desc.__get__(self.instance).size
         return None
 
     def _iinitialized(self, field):
