@@ -13,7 +13,7 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
     functions to implement mandatory instance == None case.
     '''
 
-    def __new__(cls, name, bases, namespace, **kwds):
+    def __new__(cls, name, bases, kwds):
         # Wrap __get__ to always implement instance == None case. It also
         # fetches the right instance of struct in case we are in a container.
         __get__ = kwds.get('__get__')
@@ -33,7 +33,11 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
                     raise AttributeError("Can't set without an instance.")
                 return __set__(self, instance, value)
             kwds['__set__'] = wrapper
+        return super().__new__(cls, name, bases, kwds)
 
+
+class _MetaAbstractField(_MetaAbstractDescriptor):
+    def __new__(cls, clsname, bases, kwds):
         _field_offset = kwds.get('_field_offset')
         if _field_offset is not None:
             @functools.wraps(_field_offset)
@@ -41,10 +45,10 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
             def wrapper(*args, **kwargs):
                 return _field_offset(*args, **kwargs)
             kwds['_field_offset'] = wrapper
-        return super().__new__(cls, name, bases, namespace, **kwds)
+        return super().__new__(cls, clsname, bases, kwds)
 
 
-class AbstractField(metaclass=_MetaAbstractDescriptor):
+class AbstractField(metaclass=_MetaAbstractField):
     def initialize(self, instance):
         '''
         This method can be overridden to initialize data against the instance.
