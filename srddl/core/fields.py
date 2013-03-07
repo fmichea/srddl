@@ -122,16 +122,18 @@ class AbstractField(metaclass=_MetaAbstractField):
         if isinstance(field, AbstractField):
             if instance._srddl._field_offset(instance, field) is None:
                 raise Exception('fail')
-            res = field.__get__(instance).value
-            if not isinstance(res, type):
-                raise TypeError
-            return res
+            return self._subfield_value(instance, field.__get__(instance), type=type)
         elif isinstance(field, type):
             return field
         elif inspect.ismethod(field) or inspect.isfunction(field):
-            res = field(instance)
+            res = self._subfield_value(instance, field(instance), type=type)
             if not isinstance(res, type):
                 raise Exception('fail3')
+            return res
+        elif isinstance(field, BoundValue):
+            res = field.value
+            if not isinstance(res, type):
+                raise TypeError
             return res
         raise Exception('fail2')
 
