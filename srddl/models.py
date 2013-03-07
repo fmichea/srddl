@@ -15,6 +15,7 @@ class _SrddlInternal:
 
     def __init__(self, instance, namespace):
         self.instance = instance
+        self.fields = list()
         self.fields_data = dict()
         self.initialized_fields = dict()
         self.namespace = collections.OrderedDict()
@@ -23,6 +24,7 @@ class _SrddlInternal:
     def add_namespace(self, namespace):
         for field_name, field in namespace.items():
             if isinstance(field, AbstractField):
+                self.fields.append(field_name)
                 self.namespace[field_name] = field
                 field.initialize(self.instance)
 
