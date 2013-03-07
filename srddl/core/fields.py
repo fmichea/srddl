@@ -23,6 +23,8 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
             def wrapper(self, instance, owner=None):
                 if instance is None:
                     return self
+                if not self._iinitialized(instance, self):
+                    raise Exception('tgix')
                 return __get__(self, instance, owner=owner)
             kwds['__get__'] = wrapper
 
