@@ -20,6 +20,14 @@ class C(sm.Struct):
     length = sf.IntField()
     data = sf.Array(length, sf.IntField())
 
+class D(sm.Struct):
+    length = sf.IntField()
+    data = sf.Array(lambda struct: 2, sf.IntField())
+
+class E(sm.Struct):
+    data = sf.Array(lambda struct: struct.length, sf.IntField())
+    length = sf.IntField()
+
 data = '2adeadbeefefbeadde424344450001020304050607080900002a2b00000000000004'
 data = bytearray.fromhex(data)
 
@@ -43,3 +51,25 @@ c = C(data, 0)
 
 assert(c.length == 2)
 assert(c.data == [0x42, 0x43])
+
+d = D(data, 0)
+
+assert(d.length == 2)
+assert(d.data == [0x42, 0x43])
+
+try:
+    e = E(data, 0)
+    assert(False)
+except Exception:
+    pass # OK, SHOULD RAISE
+
+class F(sm.Struct):
+    b = sf.SuperField(B)
+    data = sf.Array(lambda struct: struct.b.b_first, sf.IntField())
+
+data = bytearray.fromhex('020000004243')
+
+f = F(data, 0)
+
+assert(f.b.b_first == 2)
+assert(f.data == [0x42, 0x43])
