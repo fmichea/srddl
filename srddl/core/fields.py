@@ -44,14 +44,6 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
 
 class _MetaAbstractField(_MetaAbstractDescriptor):
     def __new__(cls, clsname, bases, kwds):
-        _field_offset = kwds.get('_field_offset')
-        if _field_offset is not None:
-            @functools.wraps(_field_offset)
-            @functools.lru_cache()
-            def wrapper(*args, **kwargs):
-                return _field_offset(*args, **kwargs)
-            kwds['_field_offset'] = wrapper
-
         # When referencing a field from another, we basically need to know if
         # the field is initialized or not, so if we can fetch its value or not.
         initialize = kwds.get('initialize')
