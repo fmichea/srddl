@@ -73,6 +73,8 @@ class Array(AbstractContainerField):
             for it in self._value:
                 if it is field:
                     return offset
+                if not instance._srddl._iinitialized(it):
+                    return None
                 tmp = it._field_offset(instance, field)
                 if tmp is not None:
                     return offset + tmp

@@ -45,6 +45,17 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
             def wrapper(*args, **kwargs):
                 return _field_offset(*args, **kwargs)
             kwds['_field_offset'] = wrapper
+
+        initialize = kwds.get('initialize')
+        if initialize is not None:
+            @functools.wraps(initialize)
+            def wrapper(self, instance):
+                first = instance._srddl.initialized_fields.get(id(self), None)
+                instance._srddl.initialized_fields[id(self)] = False
+                initialize(self, instance)
+                if first is None:
+                    instance._srddl.initialized_fields[id(self)] = True
+            kwds['initialize'] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
 
@@ -100,6 +111,9 @@ class AbstractField(metaclass=_MetaAbstractField):
         default, this function returns ``None``.
         '''
         return None
+
+    def _iinitialized(self, instance, field):
+        return instance._srddl.initialized_fields.get(id(field), False)
 
 
 @functools.total_ordering

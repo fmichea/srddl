@@ -14,7 +14,9 @@ class _SrddlInternal:
     '''
 
     def __init__(self, instance, namespace):
-        self.fields_data, self.instance = dict(), instance
+        self.instance = instance
+        self.fields_data = dict()
+        self.initialized_fields = dict()
         self.namespace = collections.OrderedDict()
         self.add_namespace(namespace)
 
@@ -36,11 +38,18 @@ class _SrddlInternal:
         for field_name, field_desc in self.namespace.items():
             if field_desc is field:
                 return offset
+            # This protects the referencing of other fields that are not
+            # initialized yet, during initialization of one field.
+            if not self._iinitialized(field_desc):
+                return None
             tmp = field_desc._field_offset(instance, field)
             if tmp is not None:
                 return offset + tmp
             offset += field_desc.__get__(instance).size
         return None
+
+    def _iinitialized(self, field):
+        return self.initialized_fields.get(id(field), False)
 
 
 class _MetaStruct(type):
