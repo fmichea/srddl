@@ -272,8 +272,15 @@ class Value:
     _fields = ['value', 'name', 'description']
 
     def __init__(self, *args, **kwargs):
-        for field_name, value in zip(self.__class__._fields, args):
-            setattr(self, '_{}'.format(field_name), value)
+        '''
+        Init function has a specific behavior. Positional arguments are are in
+        the order of the fields specified in Value's documentation. Then you can
+        override specific values with keyword arguments.
+        '''
+        vals = dict(zip(self.__class__._fields, args))
+        vals.update(kwargs)
+        for name in Value._fields:
+            setattr(self, '_{}'.format(name), vals.get(name, None))
 
     def __getattr__(self, attr_name):
         if attr_name not in self.__class__._fields:
