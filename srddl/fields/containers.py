@@ -89,11 +89,12 @@ class Array(AbstractContainerField):
         data, dim = [], self._reference_value(instance, self._dim)
         for _ in range(dim):
             tmp = copy.copy(self._desc)
-            tmp.initialize(instance)
             data.append(tmp)
         res = Array._ArrayInner(instance, self._ioffset(instance), None)
         res.initialize(data)
         self._set_data(instance, res)
+        for it in data:
+            it.initialize(instance)
 
     def _field_offset(self, instance, field):
         return self._get_data(instance)._field_offset(instance, field)
