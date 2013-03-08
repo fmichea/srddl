@@ -118,8 +118,16 @@ class AbstractField(metaclass=_MetaAbstractField):
         return instance._srddl._field_offset(self)
 
     def _get_data(self, instance):
-        '''Returns the data associated with the field.'''
-        return instance._srddl.fields_data[id(self)]
+        '''
+        Returns the data associated with the field. This data is stored in
+        the special attribute _srddl of the instance, so it is unique for each
+        instance. Note that if the data is not initialized, the this function
+        will raise .
+        '''
+        key = id(self)
+        if key not in instance._srddl.fields_data:
+            raise se.NoFieldDataError()
+        return instance._srddl.fields_data[key]
 
     def _set_data(self, instance, value):
         '''Sets the data associated with the field.'''
