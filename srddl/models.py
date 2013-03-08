@@ -57,7 +57,7 @@ class _SrddlInternal:
             if status == FieldStatus.KO:
                 raise se.FieldNotFoundError(self.instance, field, reason)
             try:
-                return field_desc._field_offset(self.instance, field)
+                return offset + field_desc._field_offset(self.instance, field)
             except se.FieldNotFoundError:
                 if status == FieldStatus.INIT:
                     raise se.FieldNotFoundError(self.instance, field, reason)

@@ -69,8 +69,7 @@ class Array(AbstractContainerField):
                 yield it.__get__(self._instance)
 
         def _field_offset(self, instance, field):
-            res = instance._srddl._field_offset(field, fields=tuple(self._value))
-            return (self._offset + res)
+            return instance._srddl._field_offset(field, fields=tuple(self._value))
 
         @property
         def size(self):
