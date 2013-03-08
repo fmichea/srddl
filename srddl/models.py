@@ -4,6 +4,8 @@
 import collections
 import functools
 
+import srddl.exceptions as se
+
 from srddl.core.fields import AbstractField, FieldStatus
 
 class _SrddlInternal:
@@ -32,9 +34,11 @@ class _SrddlInternal:
                 self.namespace[field_name] = field
                 field.initialize(self.instance)
 
-    def _isize(self, instance):
+    def _isize(self, instance, fields=None):
         res = 0
-        for field_name, field_desc in self.namespace.items():
+        if fields is None:
+            fields = self.namespace.values()
+        for field_desc in fields:
             res += field_desc.__get__(instance).size
         return res
 
