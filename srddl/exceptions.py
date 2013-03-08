@@ -53,3 +53,13 @@ class FieldNotReadyError(Exception):
     def __str__(self):
         res = 'The field {field} is not ready. You cannot read its value.'
         return res.format(field=self.field)
+
+
+class InvalidReferenceError(Exception):
+    def __init__(self, ref, reason, **kwds):
+        self.ref, self.reason, self.kwds = ref, reason, kwds
+
+    def __str__(self):
+        res = 'The value of subfield `{ref}` could\'t be retrieved.\n'
+        res += 'Reason: {reason}'
+        return res.format(ref=self.ref, reason=self.reason.format(**self.kwds))
