@@ -50,6 +50,11 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
 
 
 class _MetaAbstractField(_MetaAbstractDescriptor):
+    '''
+    This meta-class will make sure that initialization of a Field is done
+    correctly.
+    '''
+
     def __new__(cls, clsname, bases, kwds):
         # When referencing a field from another, we basically need to know if
         # the field is initialized or not, so if we can fetch its value or not.
@@ -89,8 +94,8 @@ class AbstractField(metaclass=_MetaAbstractField):
     @abc.abstractmethod
     def __get__(self, instance, owner=None):
         '''
-        This function must return the decoded value of the field. It can either
-        be a integer, a bytearray, a Value or a list of Values.
+        This function must return the decoded value of the field. It should
+        always be a BoundValue, though.
         '''
 
     @abc.abstractmethod
@@ -169,21 +174,36 @@ class AbstractField(metaclass=_MetaAbstractField):
 
 @functools.total_ordering
 class BoundValue(metaclass=_MetaAbstractDescriptor):
+    '''
+    The BoundValue class represents a value obtained by fetching a Field. Each
+    field may define and return a specialized version of the BoundValue,
+    defining properties for more advanced usage of these values.
+
+    If a Value was found, it is copied over the BoundValue, so you can retreive
+    the documentation associated with the Value (during Field definition)
+    directly with the BoundValue.
+
+    Aside from this, the BoundValue also exposes the size of the value (in
+    bytes) and its offset. You may not need these value, but they are public
+    anyway.
+    '''
+
     def __init__(self, instance, offset, size):
-        '''
-        This function initializes the Abstract value with mandatory information
-        needed. This is not the function you should override if you want to
-        manipulate the value.
-        '''
         self._instance, self._size, self._offset = instance, size, offset
 
     def __getattr__(self, attr_name):
+        '''
+        Little helper to avoid defining a getter for each public value of the
+        class. It also copies public values of the Value class, since they are
+        also available properties of a BoundValue.
+        '''
         lst = ['size', 'offset'] + Value._fields
         if attr_name not in lst:
             raise AttributeError
         return getattr(self, '_{}'.format(attr_name), None)
 
     def __repr__(self):
+        '''Repesentation of a Bound Value. Really verbose.'''
         pp = pprint.PrettyPrinter(indent=2)
         class_name = self.__class__.__module__ + '.' + self.__class__.__name__
         return '<{} at {:#x} with value {}{} for instance {:#x}>'.format(
@@ -193,6 +213,11 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
         )
 
     def initialize(self, value):
+        '''
+        This is the function used to set the value asociated with the
+        BoundValue. If a Value is given, it is copied, else the value is
+        directly stored with no modification.
+        '''
         if isinstance(value, Value):
             for field_name in Value._fields:
                 val = getattr(value, field_name)
@@ -201,13 +226,26 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
             self._value = value
 
     def __eq__(self, other):
+        # This function is needed by functools.total_ordering.
         return self.value == other
 
     def __lt__(self, other):
+        # This function is needed by functools.total_ordering.
         return self.value < other
 
 
 class Value:
+    '''
+    The Value class is used by the ``values`` keyword parameter of certain
+    fields. It is used to define documentation on values possible. The usage
+    of this values is dependent on the Field, see their documentation.
+
+    The Value exports the following attributes:
+        - value
+        - name
+        - description
+    '''
+
     _fields = ['value', 'name', 'description']
 
     def __init__(self, *args, **kwargs):
