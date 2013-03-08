@@ -7,6 +7,9 @@ import inspect
 import pprint
 
 import srddl.core.helpers as sch
+import srddl.exceptions as se
+
+FieldStatus = sch.enum(KO=0, INIT=1, OK=2)
 
 class _MetaAbstractDescriptor(abc.ABCMeta):
     '''
@@ -24,9 +27,13 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
             def wrapper(self, instance, owner=None):
                 if instance is None:
                     return self
-                if not self._iinitialized(instance, self):
-                    raise Exception('tgix')
-                return __get__(self, instance, owner=owner)
+                if self._get_status(instance) != FieldStatus.OK:
+                    raise se.FieldNotReadyError(self)
+                res = __get__(self, instance, owner=owner)
+                from srddl.models import Struct
+                if not (res is None or isinstance(res, (BoundValue, Struct))):
+                    raise se.NotABoundValueError(self)
+                return res
             kwds['__get__'] = wrapper
 
         # The descriptor is not writable on a model level, so it raises an
@@ -50,11 +57,21 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         if initialize is not None:
             @functools.wraps(initialize)
             def wrapper(self, instance):
-                first = instance._srddl.initialized_fields.get(id(self), None)
-                instance._srddl.initialized_fields[id(self)] = False
+                # There are three states to the initialization process:
+                #
+                #     FieldStatus.KO -> FieldStatus.INIT -> FieldStatus.OK
+                #
+                # When the value is not present, this means we haven't even
+                # begun to initialize the field. When False, the initialization
+                # process has begun, and finally when True everything is fine.
+                #
+                # Since we want inheritance to work, we need to set the status
+                # only on the call on a instance that is the first one.
+                status = self._get_status(instance)
+                self._set_status(instance, FieldStatus.INIT)
                 initialize(self, instance)
-                if first is None:
-                    instance._srddl.initialized_fields[id(self)] = True
+                if status == FieldStatus.KO:
+                    self._set_status(instance, FieldStatus.OK)
             kwds['initialize'] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
@@ -133,6 +150,21 @@ class AbstractField(metaclass=_MetaAbstractField):
                 raise TypeError
             return res
         raise Exception('fail2')
+    def _get_status(self, instance):
+        '''
+        The status of the field specifies if it is initialized, currently
+        initializing or totally not ready, meaning its value is not usable. This
+        function is always available and cannot fail.
+        '''
+        return instance._srddl.fields_status.get(id(self), FieldStatus.KO)
+
+    def _set_status(self, instance, value):
+        '''
+        This method permits to set the status of the field against a certain
+        instance. The value should be a valid value in enum FieldStatus.
+        '''
+        instance._srddl.fields_status[id(self)] = value
+
 
 
 @functools.total_ordering

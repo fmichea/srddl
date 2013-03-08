@@ -4,7 +4,7 @@
 import collections
 import functools
 
-from srddl.core.fields import AbstractField
+from srddl.core.fields import AbstractField, FieldStatus
 
 class _SrddlInternal:
     '''
@@ -15,9 +15,13 @@ class _SrddlInternal:
 
     def __init__(self, instance, namespace):
         self.instance = instance
+
+        # Some meta data on fields.
         self.fields = list()
         self.fields_data = dict()
-        self.initialized_fields = dict()
+        self.fields_status = dict()
+
+        # The namespace contains all the fields of the structure.
         self.namespace = collections.OrderedDict()
         self.add_namespace(namespace)
 
