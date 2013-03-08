@@ -63,3 +63,12 @@ class InvalidReferenceError(Exception):
         res = 'The value of subfield `{ref}` could\'t be retrieved.\n'
         res += 'Reason: {reason}'
         return res.format(ref=self.ref, reason=self.reason.format(**self.kwds))
+
+
+class NotABoundValueError(Exception):
+    def __init__(self, field):
+        self.field = field
+
+    def __str__(self):
+        res = 'The value returned by {field} was not a BoundValue.'
+        return res.format(field=self.field)
