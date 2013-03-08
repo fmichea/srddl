@@ -33,3 +33,14 @@ class NoFieldDataError(Exception):
         res = 'The current field {name} tried to access to its data, though it'
         res += ' has no data associated with it.'
         return res.format(name='[unkown]')
+
+
+class FieldNotFoundError(Exception):
+    def __init__(self, instance, field, reason=None):
+        self.instance, self.field, self.reason = instance, field, reason
+
+    def __str__(self):
+        res = 'The field {field} was not found in instance {instance}.\n'
+        if self.reason is not None:
+            res += 'Reason: {reason}'
+        return res.format(instance=self.instance, field=self.field)
