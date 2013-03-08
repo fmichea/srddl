@@ -146,24 +146,6 @@ class AbstractField(metaclass=_MetaAbstractField):
     def _iinitialized(self, instance, field):
         return instance._srddl.initialized_fields.get(id(field), False)
 
-    def _subfield_value(self, instance, field, type=int):
-        if isinstance(field, AbstractField):
-            if instance._srddl._field_offset(instance, field) is None:
-                raise Exception('fail')
-            return self._subfield_value(instance, field.__get__(instance), type=type)
-        elif isinstance(field, type):
-            return field
-        elif inspect.ismethod(field) or inspect.isfunction(field):
-            res = self._subfield_value(instance, field(instance), type=type)
-            if not isinstance(res, type):
-                raise Exception('fail3')
-            return res
-        elif isinstance(field, BoundValue):
-            res = field.value
-            if not isinstance(res, type):
-                raise TypeError
-            return res
-        raise Exception('fail2')
     def _get_status(self, instance):
         '''
         The status of the field specifies if it is initialized, currently
@@ -179,6 +161,37 @@ class AbstractField(metaclass=_MetaAbstractField):
         '''
         instance._srddl.fields_status[id(self)] = value
 
+    def _reference_value(self, instance, ref, type_=int):
+        '''
+        This function permits to retrieve the value of a Field, a lambda or a
+        BoundValue until it is valid with ``type`` (``int`` by default). If it
+        is none of theses types, it raises InvalidReferenceError. It may also
+        raise FieldNotReady if the lambda/function fetches an uninitialized
+        field.
+        '''
+        def inner(ref):
+            if isinstance(ref, type_):
+                # Dereference finally gave a good value, so we return it
+                # directly.
+                return ref
+            elif isinstance(ref, AbstractField):
+                try:
+                    instance._srddl._field_offset(ref)
+                except se.FieldNotFoundError:
+                    reason = 'field is not in structure or not initialized.'
+                    raise se.InvalidReferenceError(ref, reason)
+                return inner(ref.__get__(instance))
+            elif isinstance(ref, BoundValue):
+                res = ref.value
+                if not isinstance(res, type_):
+                    reason = 'BoundValue\'s value is not of the right type.'
+                    raise se.InvalidReferenceError(ref, reason)
+                return res
+            elif inspect.ismethod(ref) or inspect.isfunction(ref):
+                return inner(ref(instance))
+            reason = 'invalid reference type {type_}, see documentation.'
+            raise se.InvalidReferenceError(reason, type_=type(ref))
+        return inner(ref)
 
 
 @functools.total_ordering
