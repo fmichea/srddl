@@ -44,3 +44,12 @@ class FieldNotFoundError(Exception):
         if self.reason is not None:
             res += 'Reason: {reason}'
         return res.format(instance=self.instance, field=self.field)
+
+
+class FieldNotReadyError(Exception):
+    def __init__(self, field):
+        self.field = field
+
+    def __str__(self):
+        res = 'The field {field} is not ready. You cannot read its value.'
+        return res.format(field=self.field)
