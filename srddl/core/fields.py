@@ -115,7 +115,7 @@ class AbstractField(metaclass=_MetaAbstractField):
         This function must return the starting offset of the field. It is a
         wrapper arround ``_field_offset`` called on self.
         '''
-        return instance._srddl._field_offset(instance, self)
+        return instance._srddl._field_offset(self)
 
     def _get_data(self, instance):
         '''Returns the data associated with the field.'''
@@ -129,10 +129,11 @@ class AbstractField(metaclass=_MetaAbstractField):
         '''
         Calculates the offset of an inner field, 0 being the beginning of the
         current field. If the field is not a subfield of the current field, it
-        must return None. Don't forget to call this function on subfields. By
-        default, this function returns ``None``.
+        must raise FieldNotFoundError. Don't forget to call this function on
+        subfields.
         '''
-        return None
+        reason = 'Not a container.'
+        raise se.FieldNotFoundError(instance, field, reason)
 
     def _iinitialized(self, instance, field):
         return instance._srddl.initialized_fields.get(id(field), False)

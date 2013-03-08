@@ -39,23 +39,27 @@ class _SrddlInternal:
         return res
 
     @functools.lru_cache()
-    def _field_offset(self, instance, field):
+    def _field_offset(self, field, fields=None):
         offset = self.instance.offset
-        for field_name, field_desc in self.namespace.items():
+        if fields is None:
+            fields = self.namespace.values()
+        for field_desc in fields:
             if field_desc is field:
                 return offset
             # This protects the referencing of other fields that are not
             # initialized yet, during initialization of one field.
-            if not self._iinitialized(field_desc):
-                return None
-            tmp = field_desc._field_offset(self.instance, field)
-            if tmp is not None:
-                return offset + tmp
-            offset += field_desc.__get__(self.instance).size
-        return None
-
-    def _iinitialized(self, field):
-        return self.initialized_fields.get(id(field), False)
+            status = field_desc._get_status(self.instance)
+            reason = 'unitialized structure fields reached.'
+            if status == FieldStatus.KO:
+                raise se.FieldNotFoundError(self.instance, field, reason)
+            try:
+                return field_desc._field_offset(self.instance, field)
+            except se.FieldNotFoundError:
+                if status == FieldStatus.INIT:
+                    raise se.FieldNotFoundError(self.instance, field, reason)
+                offset += field_desc.__get__(self.instance).size
+        reason = 'end of structure reached.'
+        raise se.FieldNotFoundError(self.instance, field, reason)
 
 
 class _MetaStruct(type):

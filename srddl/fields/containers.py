@@ -37,9 +37,10 @@ class SuperField(AbstractContainerField):
         self._set_data(instance, self._cls(instance.buf, self._ioffset(instance)))
 
     def _field_offset(self, instance, field):
-        if field is self._get_data(instance):
+        struct = self._get_data(instance)
+        if field is struct:
             return 0
-        return self._get_data(instance)._srddl._field_offset(instance, field)
+        return struct._srddl._field_offset(field)
 
 
 class Array(AbstractContainerField):
@@ -69,17 +70,8 @@ class Array(AbstractContainerField):
                 yield it.__get__(self._instance)
 
         def _field_offset(self, instance, field):
-            offset = 0
-            for it in self._value:
-                if it is field:
-                    return offset
-                if not instance._srddl._iinitialized(it):
-                    return None
-                tmp = it._field_offset(instance, field)
-                if tmp is not None:
-                    return offset + tmp
-                offset += it.__get__(instance).size
-            return None
+            res = instance._srddl._field_offset(field, fields=tuple(self._value))
+            return (self._offset + res)
 
         @property
         def size(self):
