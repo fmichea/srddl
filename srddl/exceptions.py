@@ -26,3 +26,10 @@ class ROContainerError(Exception):
         res = 'Containers are read-only, you can set their content but not'
         res += ' them directly.'
         return res
+
+
+class NoFieldDataError(Exception):
+    def __str__(self):
+        res = 'The current field {name} tried to access to its data, though it'
+        res += ' has no data associated with it.'
+        return res.format(name='[unkown]')
