@@ -143,9 +143,6 @@ class AbstractField(metaclass=_MetaAbstractField):
         reason = 'Not a container.'
         raise se.FieldNotFoundError(instance, field, reason)
 
-    def _iinitialized(self, instance, field):
-        return instance._srddl.initialized_fields.get(id(field), False)
-
     def _get_status(self, instance):
         '''
         The status of the field specifies if it is initialized, currently
@@ -249,10 +246,14 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
 
     def __eq__(self, other):
         # This function is needed by functools.total_ordering.
+        if isinstance(other, BoundValue):
+            return self.value == other.value
         return self.value == other
 
     def __lt__(self, other):
         # This function is needed by functools.total_ordering.
+        if isinstance(other, BoundValue):
+            return self.value < other.value
         return self.value < other
 
 

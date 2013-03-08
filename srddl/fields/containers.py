@@ -21,7 +21,6 @@ class AbstractContainerField(AbstractField):
     def _isize(self, instance):
         return self._get_data(instance).size
 
-
 class SuperField(AbstractContainerField):
     '''
     SuperField represents a packed series of fields. It is a sub-division of
@@ -44,7 +43,7 @@ class SuperField(AbstractContainerField):
 
 
 class Array(AbstractContainerField):
-    class _Inner(BoundValue):
+    class _ArrayInner(BoundValue):
         def __len__(self):
             return len(self._value)
 
@@ -88,12 +87,12 @@ class Array(AbstractContainerField):
             raise se.ArrayError()
 
     def initialize(self, instance):
-        data, dim = [], self._subfield_value(instance, self._dim)
+        data, dim = [], self._reference_value(instance, self._dim)
         for _ in range(dim):
             tmp = copy.copy(self._desc)
             tmp.initialize(instance)
             data.append(tmp)
-        res = Array._Inner(instance, self._ioffset(instance), None)
+        res = Array._ArrayInner(instance, self._ioffset(instance), None)
         res.initialize(data)
         self._set_data(instance, res)
 
