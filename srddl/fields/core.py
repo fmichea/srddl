@@ -72,7 +72,7 @@ class ByteArrayField(AbstractField):
         struct.pack_into(sig, instance.bug, self._ioffset(instance), val)
 
     def _isize(self, instance):
-        return self._size
+        return self._reference_value(instance, self._size)
 
     def _signature(self, instance):
         return '{}s'.format(self._isize(instance))
