@@ -27,13 +27,7 @@ class _MetaAbstractDescriptor(abc.ABCMeta):
             def wrapper(self, instance, owner=None):
                 if instance is None:
                     return self
-                if self._get_status(instance) != FieldStatus.OK:
-                    raise se.FieldNotReadyError(self)
-                res = __get__(self, instance, owner=owner)
-                from srddl.models import Struct
-                if not (res is None or isinstance(res, (BoundValue, Struct))):
-                    raise se.NotABoundValueError(self)
-                return res
+                return __get__(self, instance, owner)
             kwds['__get__'] = wrapper
 
         # The descriptor is not writable on a model level, so it raises an
@@ -78,6 +72,19 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 if status == FieldStatus.KO:
                     self._set_status(instance, FieldStatus.OK)
             kwds['initialize'] = wrapper
+
+        __get__ = kwds.get('__get__')
+        if __get__ is not None:
+            @functools.wraps(__get__)
+            def wrapper(self, instance, owner=None):
+                if self._get_status(instance) != FieldStatus.OK:
+                    raise se.FieldNotReadyError(self)
+                res = __get__(self, instance, owner=owner)
+                from srddl.models import Struct
+                if not (res is None or isinstance(res, (BoundValue, Struct))):
+                    raise se.NotABoundValueError(self)
+                return res
+            kwds['__get__'] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
 
