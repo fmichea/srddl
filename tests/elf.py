@@ -54,12 +54,12 @@ class ElfN_Ehdr(sm.Struct):
 
         ei_abiversion = sf.IntField('ABI Version')
 
-        ei_pad = sf.PaddingField(EI_INDENT, mode=sf.PaddingMode.FILL)
+        ei_pad = sf.PaddingField(EI_INDENT, mode=sf.PaddingField.Mode.FILL)
 
 
     e_indent = sf.SuperField(ElfN_Ehdr__Indent)
 
-    e_type = sf.IntField('Object file type', size=sf.Field_Sizes.INT16, values=[
+    e_type = sf.IntField('Object file type', size=sf.IntField.Size.INT16, values=[
         sf.Value(0, 'ET_NONE', 'Unknown type.'),
         sf.Value(1, 'ET_REL', 'Relocatable file.'),
         sf.Value(2, 'ET_EXEC', 'Executable file.'),
@@ -67,11 +67,11 @@ class ElfN_Ehdr(sm.Struct):
         # ET_CORE left appart for testing purposes.
     ])
 
-    e_machine = sf.IntField('Machine architecture', size=sf.Field_Sizes.INT16, values=[
+    e_machine = sf.IntField('Machine architecture', size=sf.IntField.Size.INT16, values=[
         # Not necessary though, this is just here for documentation purposes.
     ])
 
-    e_version = sf.IntField('File version', size=sf.Field_Sizes.INT32, values=[
+    e_version = sf.IntField('File version', size=sf.IntField.Size.INT32, values=[
         sf.Value(0, 'EV_NONE', 'Invalid version'),
         sf.Value(1, 'EV_CURRENT', 'Current version'),
     ])
@@ -79,13 +79,13 @@ class ElfN_Ehdr(sm.Struct):
     e_entry = ElfN_Addr('Entry point of the program')
     e_phoff = ElfN_Off('Program header table offset')
     e_shoff = ElfN_Off('Section header table offset')
-    e_flags = sf.IntField('Machine flags (unused)', size=sf.Field_Sizes.INT32)
-    e_ehsize = sf.IntField('ELF Header size', size=sf.Field_Sizes.INT16)
-    e_phentsize = sf.IntField('Program header entry size', size=sf.Field_Sizes.INT16)
-    e_phnum = sf.IntField('Number of entries in program header table', size=sf.Field_Sizes.INT16)
-    e_shentsize = sf.IntField('Section header entry size', size=sf.Field_Sizes.INT16)
-    e_shnum = sf.IntField('Number of entrues in section heade table', size=sf.Field_Sizes.INT16)
-    e_shstrndx = sf.IntField('Index of string table section header', size=sf.Field_Sizes.INT16)
+    e_flags = sf.IntField('Machine flags (unused)', size=sf.IntField.Size.INT32)
+    e_ehsize = sf.IntField('ELF Header size', size=sf.IntField.Size.INT16)
+    e_phentsize = sf.IntField('Program header entry size', size=sf.IntField.Size.INT16)
+    e_phnum = sf.IntField('Number of entries in program header table', size=sf.IntField.Size.INT16)
+    e_shentsize = sf.IntField('Section header entry size', size=sf.IntField.Size.INT16)
+    e_shnum = sf.IntField('Number of entrues in section heade table', size=sf.IntField.Size.INT16)
+    e_shstrndx = sf.IntField('Index of string table section header', size=sf.IntField.Size.INT16)
 
 if __name__ == '__main__':
     prog = '/bin/ls' if len(sys.argv) == 1 else sys.argv[1]

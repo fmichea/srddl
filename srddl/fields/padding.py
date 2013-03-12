@@ -6,13 +6,14 @@ import srddl.core.helpers as sch
 
 from srddl.core.fields import AbstractField, BoundValue
 
-PaddingMode = sch.enum(TAKE=0, FILL=1)
-
 class PaddingValue(BoundValue): pass
 
 class PaddingField(AbstractField):
+    Mode = sch.enum(TAKE=0, FILL=1)
+
     def __init__(self, size, **kwargs):
-        self._size, self._mode = size, kwargs.get('mode', PaddingMode.TAKE)
+        self._mode = kwargs.get('mode', PaddingField.Mode.TAKE)
+        self._size = size
 
     def __get__(self, inst, owner=None):
         return PaddingValue(inst, self._ioffset(inst), self._isize(inst))
@@ -21,9 +22,9 @@ class PaddingField(AbstractField):
         pass
 
     def _isize(self, instance):
-        if self._mode == PaddingMode.TAKE:
+        if self._mode == PaddingField.Mode.TAKE:
             return self._size
-        elif self._mode == PaddingMode.FILL:
+        elif self._mode == PaddingField.Mode.FILL:
             res = self._size - self._ioffset(instance)
             return res if 0 <= res else 0
         return None

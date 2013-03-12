@@ -2,18 +2,18 @@ import srddl.models as sm
 import srddl.fields as sf
 
 class B(sm.Struct):
-    b_first = sf.IntField(size=sf.Field_Sizes.INT32)
+    b_first = sf.IntField(size=sf.IntField.Size.INT32)
 
 class A(sm.Struct):
     a_first = sf.IntField('First field')
-    a_second = sf.IntField('Second field', size=sf.Field_Sizes.INT32,
-                        endianess=sf.Field_Endianess.BIG)
+    a_second = sf.IntField('Second field', size=sf.IntField.Size.INT32,
+                                           endianess=sf.IntField.Endianess.BIG)
     a_third = sf.SuperField(B)
     a_fourth = sf.ArrayField(4, sf.IntField())
     a_fifth = sf.ByteArrayField(10, 'Fifth field')
     a_sixth = sf.PaddingField(2)
-    a_seventh = sf.IntField(size=sf.Field_Sizes.INT16)
-    a_pad = sf.PaddingField(33, mode=sf.PaddingMode.FILL)
+    a_seventh = sf.IntField(size=sf.IntField.Size.INT16)
+    a_pad = sf.PaddingField(33, mode=sf.PaddingField.Mode.FILL)
     a_eigth = sf.IntField(values=[sf.Value(0x4, 'VALUE')])
 
 class C(sm.Struct):

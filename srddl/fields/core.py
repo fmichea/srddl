@@ -9,20 +9,20 @@ from srddl.core.fields import AbstractField, BoundValue
 import srddl.exceptions as se
 import srddl.core.helpers as sch
 
-Field_Sizes = sch.enum(BYTE=1, INT16=2, INT32=4, INT64=8)
-Field_Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
-
 class IntValue(BoundValue):
     def __index__(self):
         return self.value
 
 class IntField(AbstractField):
+    Size = sch.enum(BYTE=1, INT16=2, INT32=4, INT64=8)
+    Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
+
     def __init__(self, *args, **kwargs):
-        self._size = kwargs.pop('size', Field_Sizes.BYTE)
-        if self._size not in Field_Sizes.values():
+        self._size = kwargs.pop('size', IntField.Size.BYTE)
+        if self._size not in IntField.Size.values():
             raise ValueError("'size' is not valid.")
         self._signed = kwargs.pop('signed', False)
-        self._endianess = kwargs.pop('endianess', Field_Endianess.LITTLE)
+        self._endianess = kwargs.pop('endianess', IntField.Endianess.LITTLE)
         self._values = dict()
         for it in kwargs.pop('values', []):
             self._values[it.value] = it
