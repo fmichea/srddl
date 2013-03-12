@@ -6,14 +6,14 @@ import srddl.models as sm
 import srddl.fields as sf
 
 class UnknownChunk(sm.Struct):
-    pad = sf.Padding(1)
+    pad = sf.PaddingField(1)
     length = sf.IntField(size=sf.Field_Sizes.INT32)
     data = sf.ByteArrayField(length)
 
 class UnknownFile(sm.Struct):
-    pad = sf.Padding(1)
+    pad = sf.PaddingField(1)
     length = sf.IntField(size=sf.Field_Sizes.INT32)
-    chunks = sf.Array(length, sf.SuperField(UnknownChunk))
+    chunks = sf.ArrayField(length, sf.SuperField(UnknownChunk))
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

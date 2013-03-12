@@ -43,7 +43,7 @@ class SuperField(AbstractContainerField):
         return struct._srddl._field_offset(field)
 
 
-class Array(AbstractContainerField):
+class ArrayField(AbstractContainerField):
     class _ArrayInner(BoundValue):
         def __len__(self):
             return len(self._value)
@@ -92,7 +92,7 @@ class Array(AbstractContainerField):
         for _ in range(dim):
             tmp = copy.copy(self._desc)
             data.append(tmp)
-        res = Array._ArrayInner(instance, self._ioffset(instance), None)
+        res = ArrayField._ArrayInner(instance, self._ioffset(instance), None)
         res.initialize(data)
         self._set_data(instance, res)
         for it in data:

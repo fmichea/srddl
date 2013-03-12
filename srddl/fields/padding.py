@@ -10,7 +10,7 @@ PaddingMode = sch.enum(TAKE=0, FILL=1)
 
 class PaddingValue(BoundValue): pass
 
-class Padding(AbstractField):
+class PaddingField(AbstractField):
     def __init__(self, size, **kwargs):
         self._size, self._mode = size, kwargs.get('mode', PaddingMode.TAKE)
 

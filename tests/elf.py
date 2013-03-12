@@ -54,7 +54,7 @@ class ElfN_Ehdr(sm.Struct):
 
         ei_abiversion = sf.IntField('ABI Version')
 
-        ei_pad = sf.Padding(EI_INDENT, mode=sf.PaddingMode.FILL)
+        ei_pad = sf.PaddingField(EI_INDENT, mode=sf.PaddingMode.FILL)
 
 
     e_indent = sf.SuperField(ElfN_Ehdr__Indent)

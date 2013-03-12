@@ -9,23 +9,23 @@ class A(sm.Struct):
     a_second = sf.IntField('Second field', size=sf.Field_Sizes.INT32,
                         endianess=sf.Field_Endianess.BIG)
     a_third = sf.SuperField(B)
-    a_fourth = sf.Array(4, sf.IntField())
+    a_fourth = sf.ArrayField(4, sf.IntField())
     a_fifth = sf.ByteArrayField(10, 'Fifth field')
-    a_sixth = sf.Padding(2)
+    a_sixth = sf.PaddingField(2)
     a_seventh = sf.IntField(size=sf.Field_Sizes.INT16)
-    a_pad = sf.Padding(33, mode=sf.PaddingMode.FILL)
+    a_pad = sf.PaddingField(33, mode=sf.PaddingMode.FILL)
     a_eigth = sf.IntField(values=[sf.Value(0x4, 'VALUE')])
 
 class C(sm.Struct):
     length = sf.IntField()
-    data = sf.Array(length, sf.IntField())
+    data = sf.ArrayField(length, sf.IntField())
 
 class D(sm.Struct):
     length = sf.IntField()
-    data = sf.Array(lambda struct: 2, sf.IntField())
+    data = sf.ArrayField(lambda struct: 2, sf.IntField())
 
 class E(sm.Struct):
-    data = sf.Array(lambda struct: struct.length, sf.IntField())
+    data = sf.ArrayField(lambda struct: struct.length, sf.IntField())
     length = sf.IntField()
 
 data = '2adeadbeefefbeadde424344450001020304050607080900002a2b00000000000004'
@@ -65,7 +65,7 @@ except Exception:
 
 class F(sm.Struct):
     b = sf.SuperField(B)
-    data = sf.Array(lambda struct: struct.b.b_first, sf.IntField())
+    data = sf.ArrayField(lambda struct: struct.b.b_first, sf.IntField())
 
 data = bytearray.fromhex('020000004243')
 
