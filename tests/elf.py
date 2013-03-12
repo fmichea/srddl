@@ -19,7 +19,7 @@ EI_INDENT = 16
 
 class ElfN_Ehdr(sm.Struct):
     class ElfN_Ehdr__Indent(sm.Struct):
-        ei_mag = sf.ByteArrayField('Magic', size=4, valid=sh.equals(b'\x7fELF'))
+        ei_mag = sf.ByteArrayField(4, 'Magic', valid=sh.equals(b'\x7fELF'))
 
         ei_class = sf.IntField('Binary architecture', values=[
             sf.Value(0, 'ELFCLASSNONE', 'Invalid Class', valid=sh.invalid),

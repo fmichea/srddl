@@ -10,7 +10,7 @@ class A(sm.Struct):
                         endianess=sf.Field_Endianess.BIG)
     a_third = sf.SuperField(B)
     a_fourth = sf.Array(4, sf.IntField())
-    a_fifth = sf.ByteArrayField('Fifth field', size=10)
+    a_fifth = sf.ByteArrayField(10, 'Fifth field')
     a_sixth = sf.Padding(2)
     a_seventh = sf.IntField(size=sf.Field_Sizes.INT16)
     a_pad = sf.Padding(33, mode=sf.PaddingMode.FILL)

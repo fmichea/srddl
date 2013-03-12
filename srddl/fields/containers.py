@@ -27,10 +27,11 @@ class SuperField(AbstractContainerField):
     a structure.
     '''
 
-    def __init__(self, cls):
+    def __init__(self, cls, *args, **kwargs):
         if not issubclass(cls, Struct):
             raise se.SuperFieldError()
         self._cls = cls
+        super().__init__(*args, **kwargs)
 
     def initialize(self, instance):
         self._set_data(instance, self._cls(instance.buf, self._ioffset(instance)))
@@ -80,10 +81,11 @@ class Array(AbstractContainerField):
             return list(iter(self))
 
 
-    def __init__(self, dim, desc):
+    def __init__(self, dim, desc, *args, **kwargs):
         self._dim, self._desc = dim, desc
         if not isinstance(desc, AbstractField):
             raise se.ArrayError()
+        super().__init__(*args, **kwargs)
 
     def initialize(self, instance):
         data, dim = [], self._reference_value(instance, self._dim)

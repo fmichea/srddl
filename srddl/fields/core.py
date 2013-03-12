@@ -18,15 +18,15 @@ class IntValue(BoundValue):
 
 class IntField(AbstractField):
     def __init__(self, *args, **kwargs):
-        self._desc = args[0] if len(args) >= 1 else None
-        self._size = kwargs.get('size', 1)
+        self._size = kwargs.pop('size', Field_Sizes.BYTE)
         if self._size not in Field_Sizes.values():
             raise ValueError("'size' is not valid.")
-        self._signed = kwargs.get('signed', False)
-        self._endianess = kwargs.get('endianess', Field_Endianess.LITTLE)
+        self._signed = kwargs.pop('signed', False)
+        self._endianess = kwargs.pop('endianess', Field_Endianess.LITTLE)
         self._values = dict()
-        for it in kwargs.get('values', []):
+        for it in kwargs.pop('values', []):
             self._values[it.value] = it
+        super().__init__(*args, **kwargs)
 
     def __get__(self, instance, owner=None):
         sig, offset = self._signature(instance), self._ioffset(instance)
@@ -53,9 +53,9 @@ class ByteArrayValue(BoundValue):
     pass
 
 class ByteArrayField(AbstractField):
-    def __init__(self, *args, **kwargs):
-        self._desc = args[0] if len(args) >= 1 else None
-        self._size = kwargs.get('size', 1)
+    def __init__(self, size, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._size = size
 
     def __get__(self, instance, owner=None):
         sig = self._signature(instance)

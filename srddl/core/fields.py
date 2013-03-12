@@ -82,6 +82,31 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
 
 
 class AbstractField(metaclass=_MetaAbstractField):
+    _fields = ['description']
+
+    def __init__(self, *args, **kwargs):
+        '''
+        This init function isn't mandatory, it just permits to set some
+        attributes that should be shared with all AbstractFields. If you call
+        it you shouldn't use one of these attributes before (they will be
+        overridden).
+
+            - description
+
+        You can overwrite them after the call to init though. Works like Value
+        constructor. First positional arguments in their order are taken, to
+        match attributes list above, then keyword arguments overwrite it.
+        '''
+        vals = dict(zip(self.__class__._fields, args))
+        vals.update(kwargs)
+        for name in Value._fields:
+            setattr(self, '_{}'.format(name), vals.get(name, None))
+
+    def __getattr__(self, attr_name):
+        if attr_name not in self.__class__._fields:
+            raise AttributeError
+        return getattr(self, '_{}'.format(attr_name), None)
+
     def initialize(self, instance):
         '''
         This method can be overridden to initialize data against the instance.

@@ -8,7 +8,7 @@ import srddl.fields as sf
 class UnknownChunk(sm.Struct):
     pad = sf.Padding(1)
     length = sf.IntField(size=sf.Field_Sizes.INT32)
-    data = sf.ByteArrayField(size=length)
+    data = sf.ByteArrayField(length)
 
 class UnknownFile(sm.Struct):
     pad = sf.Padding(1)
