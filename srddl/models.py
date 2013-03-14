@@ -6,7 +6,7 @@ import functools
 
 import srddl.exceptions as se
 
-from srddl.core.fields import AbstractField, FieldStatus
+from srddl.core.fields import AbstractField, FieldInitStatus
 
 class _SrddlInternal:
     '''
@@ -54,12 +54,12 @@ class _SrddlInternal:
             # initialized yet, during initialization of one field.
             status = field_desc._get_status(self.instance)
             reason = 'unitialized structure fields reached.'
-            if status == FieldStatus.KO:
+            if status == FieldInitStatus.KO:
                 raise se.FieldNotFoundError(self.instance, field, reason)
             try:
                 return offset + field_desc._field_offset(self.instance, field)
             except se.FieldNotFoundError:
-                if status == FieldStatus.INIT:
+                if status == FieldInitStatus.INIT:
                     raise se.FieldNotFoundError(self.instance, field, reason)
                 offset += field_desc.__get__(self.instance).size
         reason = 'end of structure reached.'
