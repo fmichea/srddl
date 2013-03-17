@@ -44,8 +44,8 @@ class Signal:
         '''
         if signame not in self._signals:
             raise se.SignalNotFoundError(signame, 'subscribing')
-        sh = _SignalHandler(func, args, kwargs)
-        self._signals[signame][id(sh)].append(sh)
+        sh = _SignalHandler(func, kwargs)
+        self._signals[signame][id(sh)] = sh
         return id(sh)
 
     def unsubscribe(self, signame, idx):
@@ -60,7 +60,7 @@ class Signal:
             raise se.SignalNotFoundError(signame, 'unsubscribing')
         if idx not in self._signals[signame]:
             raise se.SignalHandlerNotFoundError(signame, idx)
-        del self._signals[signame][id(sh)]
+        del self._signals[signame][idx]
 
     def trigger(self, signame, *args):
         '''
@@ -75,4 +75,7 @@ class Signal:
             try:
                 func(args)
             except TypeError:
-                raise se.SignalHandlerCallFail(signame, func)
+                raise se.SignalHandlerCallError(signame, func)
+
+    def signals(self):
+        return list(self._signals.keys())
