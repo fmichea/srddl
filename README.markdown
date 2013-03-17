@@ -5,5 +5,5 @@ README of srddl
              sorry. You're more than welcome to follow it and patch bugs if you
              want though.
 
-Current state: Unpacking structures, see examples in `tests/` directory.
-Goal: Templated hexadecimal editor, to enhance working with binary files.
+- Current state: Unpacking structures, see examples in `examples/` directory.
+- Goal: Templated hexadecimal editor, to enhance working with binary files.
