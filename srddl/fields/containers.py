@@ -11,6 +11,7 @@ import srddl.exceptions as se
 from srddl.core.fields import AbstractField, BoundValue
 from srddl.models import Struct
 
+
 class AbstractContainerField(AbstractField):
     def __get__(self, instance, owner=None):
         return self._get_data(instance)
@@ -20,6 +21,7 @@ class AbstractContainerField(AbstractField):
 
     def _isize(self, instance):
         return self._get_data(instance).size
+
 
 class SuperField(AbstractContainerField):
     '''
@@ -100,3 +102,6 @@ class ArrayField(AbstractContainerField):
 
     def _field_offset(self, instance, field):
         return self._get_data(instance)._field_offset(instance, field)
+
+    def _reload(self, instance, field, finstance):
+        self.initialize(instance)
