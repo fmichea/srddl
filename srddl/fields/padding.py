@@ -12,6 +12,7 @@ class PaddingField(AbstractField):
     Mode = sch.enum(TAKE=0, FILL=1)
 
     def __init__(self, size, **kwargs):
+        super().__init__(self)
         self._mode = kwargs.get('mode', PaddingField.Mode.TAKE)
         self._size = size
 
