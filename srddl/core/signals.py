@@ -46,6 +46,9 @@ class Signal:
         '''
         if signame not in self._signals:
             raise se.SignalNotFoundError(signame, 'subscribing')
+        for idx, handler in self._signals[signame].items():
+            if handler.func is func:
+                return idx
         sh = _SignalHandler(func, kwargs)
         self._signals[signame][id(sh)] = sh
         return id(sh)
