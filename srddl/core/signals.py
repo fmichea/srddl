@@ -6,13 +6,13 @@ import srddl.exceptions as se
 
 class _SignalHandler:
     def __init__(self, func, kwargs):
-        self._func, self._kwargs = func, kwargs
+        self.func, self._kwargs = func, kwargs
 
     def __repr__(self):
-        return 'SignalHandler {:#x} on {}'.format(id(self), self._func)
+        return 'SignalHandler {:#x} on {}'.format(id(self), self.func)
 
     def __call__(self, args):
-        self._func(*args, **self._kwargs)
+        self.func(*args, **self._kwargs)
 
 
 class Signal:
