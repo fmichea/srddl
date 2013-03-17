@@ -14,7 +14,7 @@ class IntValue(BoundValue):
         return self.value
 
 class IntField(AbstractField):
-    Size = sch.enum(BYTE=1, INT16=2, INT32=4, INT64=8)
+    Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
     Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
 
     def __init__(self, *args, **kwargs):
