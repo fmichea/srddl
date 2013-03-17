@@ -38,7 +38,7 @@ class IntField(AbstractField):
     def __set__(self, instance, value):
         sig = self._signature(instance)
         val = ((1 << (self._isize(instance) * 8)) - 1) & value
-        return struct.pack_into(sig, instance.buf, self._ioffset(instance), val)
+        struct.pack_into(sig, instance.buf, self._ioffset(instance), val)
 
     def _isize(self, instance):
         return self._size
