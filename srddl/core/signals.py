@@ -73,11 +73,12 @@ class Signal:
         '''
         if signame not in self._signals:
             raise se.SignalNotFoundError(signame, 'triggering')
-        for func in self._signals[signame].values():
+        handlers = list(self._signals[signame].values())
+        for handler in handlers:
             try:
-                func(args)
+                handler(args)
             except TypeError:
-                raise se.SignalHandlerCallError(signame, func)
+                raise se.SignalHandlerCallError(signame, handler)
 
     def signals(self):
         return list(self._signals.keys())
