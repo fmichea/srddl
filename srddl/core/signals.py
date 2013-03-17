@@ -16,8 +16,10 @@ class _SignalHandler:
 
 
 class Signal:
-    def __init__(self):
+    def __init__(self, *args):
         self._signals = dict()
+        for arg in args:
+            self.create(arg)
 
     def create(self, signame):
         '''
