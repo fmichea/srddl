@@ -20,5 +20,5 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: {} streamFile.bin')
 
-    with sd.FileData(sys.argv[1]) as data:
-        s = UnknownFile(data, 0)
+    data = sd.FileData(sys.argv[1])
+    s = UnknownFile(data, 0)

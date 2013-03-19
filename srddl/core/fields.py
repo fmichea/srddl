@@ -72,9 +72,10 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 # only on the call on a instance that is the first one.
                 status = self._get_status(instance)
                 self._set_status(instance, FieldInitStatus.INIT)
-                if self._sig is None:
-                    self._sig = 'reload-{:x}_{:x}'.format(id(self), id(instance))
-                    REFERENCE_SIGNAL.create(self._sig)
+# FIXME: performance fix.
+#                if self._sig is None:
+#                    self._sig = 'reload-{:x}_{:x}'.format(id(self), id(instance))
+#                    REFERENCE_SIGNAL.create(self._sig)
                 initialize(self, instance)
                 if status != FieldInitStatus.INIT:
                     self._set_status(instance, FieldInitStatus.OK)
@@ -83,10 +84,11 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         __get__ = kwds.get('__get__')
         if __get__ is not None:
             @functools.wraps(__get__)
+            @functools.lru_cache()
             def wrapper(self, instance, owner=None):
                 if self._get_status(instance) != FieldInitStatus.OK:
                     raise se.FieldNotReadyError(self)
-                REFERENCE_SIGNAL.trigger('current-ref', self, instance)
+                # FIXME: performance fix. REFERENCE_SIGNAL.trigger('current-ref', self, instance)
                 res = __get__(self, instance, owner=owner)
                 from srddl.models import Struct
                 if not (res is None or isinstance(res, (BoundValue, Struct))):
@@ -94,13 +96,14 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 return res
             kwds['__get__'] = wrapper
 
-        __set__ = kwds.get('__set__')
-        if __set__ is not None:
-            @functools.wraps(__set__)
-            def wrapper(self, instance, value):
-                __set__(self, instance, value)
-                REFERENCE_SIGNAL.trigger(self._sig)
-            kwds['__set__'] = wrapper
+# FIXME: performance fix.
+#        __set__ = kwds.get('__set__')
+#        if __set__ is not None:
+#            @functools.wraps(__set__)
+#            def wrapper(self, instance, value):
+#                __set__(self, instance, value)
+#                REFERENCE_SIGNAL.trigger(self._sig)
+#            kwds['__set__'] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
 
@@ -213,9 +216,10 @@ class AbstractField(metaclass=_MetaAbstractField):
         raise FieldNotReady if the lambda/function fetches an uninitialized
         field.
         '''
-        def handler(field, finstance):
-            func = functools.partial(self._reload, instance, field, finstance)
-            REFERENCE_SIGNAL.subscribe(field._sig, func)
+# FIXME: performance fix.
+#        def handler(field, finstance):
+#            func = functools.partial(self._reload, instance, field, finstance)
+#            REFERENCE_SIGNAL.subscribe(field._sig, func)
         def inner(ref):
             if isinstance(ref, type_):
                 # Dereference finally gave a good value, so we return it
@@ -238,10 +242,12 @@ class AbstractField(metaclass=_MetaAbstractField):
                 return inner(ref(instance))
             reason = 'invalid reference type {type_}, see documentation.'
             raise se.InvalidReferenceError(reason, type_=type(ref))
-        hdl = REFERENCE_SIGNAL.subscribe('current-ref', handler)
-        res = inner(ref)
-        REFERENCE_SIGNAL.unsubscribe('current-ref', hdl)
-        return res
+# FIXME: performance fix.
+#        hdl = REFERENCE_SIGNAL.subscribe('current-ref', handler)
+#        res = inner(ref)
+#        REFERENCE_SIGNAL.unsubscribe('current-ref', hdl)
+#        return res
+        return inner(ref)
 
     def _reload(self, instance, field, finstance):
         '''
@@ -249,8 +255,9 @@ class AbstractField(metaclass=_MetaAbstractField):
         its data changes, in any way, you *must* trigger self.sig.
         '''
 
-    def __del__(self):
-        REFERENCE_SIGNAL.trigger(self._sig)
+# FIXME: performance fix.
+#    def __del__(self):
+#        REFERENCE_SIGNAL.trigger(self._sig)
 
 
 @functools.total_ordering
