@@ -3,9 +3,11 @@
 
 import sys
 
-import srddl.helpers as sh
+import srddl.data as sd
 import srddl.fields as sf
+import srddl.helpers as sh
 import srddl.models as sm
+
 
 # Atomic types.
 class ElfN_Addr(sf.IntField):

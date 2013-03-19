@@ -13,4 +13,4 @@ def test_bytearrayfield(args, kwargs, buf, expected):
         bar = sf.ByteArrayField(*args, **kwargs)
     foo = Foo(bytes.fromhex(buf), 0)
     assert(foo.bar == expected)
-    assert(foo.bar.size == len(expected))
+    assert(foo.bar['size'] == len(expected))

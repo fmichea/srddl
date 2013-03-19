@@ -269,8 +269,16 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    def __init__(self, instance, offset, size):
-        self._instance, self._size, self._offset = instance, size, offset
+    _fields = ['offset', 'size']
+
+    def __init__(self, instance, *args, **kwargs):
+        self._instance = instance
+
+        vals = dict(zip(self.__class__._fields, args))
+        vals.update(kwargs)
+        for name in self.__class__._fields:
+            if name in vals:
+                setattr(self, '_{}'.format(name), vals.get(name))
 
     def __getattr__(self, attr_name):
         '''
@@ -278,10 +286,15 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
         class. It also copies public values of the Value class, since they are
         also available properties of a BoundValue.
         '''
-        lst = ['size', 'offset'] + Value._fields
+        lst = Value._fields
         if attr_name not in lst:
             raise AttributeError
         return getattr(self, '_{}'.format(attr_name), None)
+
+    def __getitem__(self, item):
+        if item not in BoundValue._fields:
+            raise KeyError(item)
+        return getattr(self, '_{}'.format(item))
 
     def __repr__(self):
         '''Repesentation of a Bound Value. Really verbose.'''

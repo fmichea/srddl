@@ -5,6 +5,7 @@ import collections
 import functools
 
 import srddl.exceptions as se
+import srddl.data as sd
 
 from srddl.core.fields import AbstractField, FieldInitStatus
 
@@ -15,8 +16,8 @@ class _SrddlInternal:
     structure.
     '''
 
-    def __init__(self, instance, namespace):
-        self.instance = instance
+    def __init__(self, instance, data, offset):
+        self.instance, self.data, self.offset = instance, data, offset
 
         # Some meta data on fields.
         self.fields = list()
@@ -25,7 +26,6 @@ class _SrddlInternal:
 
         # The namespace contains all the fields of the structure.
         self.namespace = collections.OrderedDict()
-        self.add_namespace(namespace)
 
     def add_namespace(self, namespace):
         for field_name, field in namespace.items():
@@ -39,12 +39,12 @@ class _SrddlInternal:
         if fields is None:
             fields = self.namespace.values()
         for field_desc in fields:
-            res += field_desc.__get__(instance).size
+            res += field_desc.__get__(instance)['size']
         return res
 
     @functools.lru_cache()
     def _field_offset(self, field, fields=None):
-        offset = self.instance.offset
+        offset = self.offset
         if fields is None:
             fields = self.namespace.values()
         for field_desc in fields:
@@ -61,7 +61,7 @@ class _SrddlInternal:
             except se.FieldNotFoundError:
                 if status == FieldInitStatus.INIT:
                     raise se.FieldNotFoundError(self.instance, field, reason)
-                offset += field_desc.__get__(self.instance).size
+                offset += field_desc.__get__(self.instance)['size']
         reason = 'end of structure reached.'
         raise se.FieldNotFoundError(self.instance, field, reason)
 
@@ -85,30 +85,32 @@ class _MetaStruct(type):
     def __new__(cls, name, bases, namespace, **kwds):
         kwds = dict(namespace)
 
-        # Wrap init with a function to treat correctly containers.
+        # Wrap init with a function to manage namespaces.
         __init__ = kwds.get('__init__')
         if __init__ is not None:
             @functools.wraps(__init__)
             def init_wrapper(self, *args, **kwargs):
                 __init__(self, *args, **kwargs)
-                if not hasattr(self, '_srddl'):
-                    self._srddl = _SrddlInternal(self, namespace)
-                else:
-                    self._srddl.add_namespace(namespace)
+                self._srddl.add_namespace(namespace)
         else:
             def init_wrapper(self, *args, **kwargs):
-                try:
-                    super(self.__class__, self).__init__(*args, **kwargs)
-                    self._srddl.add_namespace(namespace)
-                except AttributeError:
-                    self._srddl = _SrddlInternal(self, namespace)
+                super(self.__class__, self).__init__(*args, **kwargs)
+                self._srddl.add_namespace(namespace)
         kwds['__init__'] = init_wrapper
         return super().__new__(cls, name, bases, kwds)
 
-class Struct(metaclass=_MetaStruct):
-    def __init__(self, buf, offset):
-        self.buf, self.offset = buf, offset
 
-    @property
-    def size(self):
-        return self._srddl._isize(self)
+class Struct(metaclass=_MetaStruct):
+    def __init__(self, data, offset):
+        if not isinstance(data, sd.Data):
+            raise Exception('fuu')
+        self._srddl = _SrddlInternal(self, data, offset)
+
+    def __getitem__(self, item):
+        properties = {
+            'size': lambda: self._srddl._isize(self),
+            'offset': lambda: self._srddl.offset,
+        }
+        if item not in properties:
+            raise KeyError(item)
+        return properties[item]()

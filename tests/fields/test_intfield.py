@@ -44,4 +44,4 @@ def test_intfield(args, kwargs, buf, expected):
         bar = sf.IntField(*args, **kwargs)
     foo = Foo(bytes.fromhex(buf), 0)
     assert(foo.bar == expected)
-    assert(foo.bar.size == (len(buf) / 2))
+    assert(foo.bar['size'] == (len(buf) / 2))

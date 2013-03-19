@@ -23,6 +23,6 @@ def test_superfield(args, kwargs, buf, expected, size):
     class Foo(sm.Struct):
         bar = sf.SuperField(*args, **kwargs)
     foo = Foo(bytes.fromhex(buf), 0)
-    assert(foo.bar.size == size)
+    assert(foo.bar['size'] == size)
     for attr, value in expected.items():
         assert(getattr(foo.bar, attr, None), value)

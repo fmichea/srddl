@@ -13,6 +13,6 @@ def test_paddingfield(args, kwargs, buf, expected):
         bar1 = sf.IntField()
         bar2 = sf.PaddingField(*args, **kwargs)
     foo = Foo(bytes.fromhex(buf), 0)
-    assert(foo.size == expected)
+    assert(foo['size'] == expected)
     assert(foo.bar1 == 0x42)
-    assert(foo.bar2.size == (expected - 1))
+    assert(foo.bar2['size'] == (expected - 1))

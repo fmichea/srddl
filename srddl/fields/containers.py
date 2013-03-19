@@ -20,7 +20,7 @@ class AbstractContainerField(AbstractField):
         raise se.ROContainerError()
 
     def _isize(self, instance):
-        return self._get_data(instance).size
+        return self._get_data(instance)['size']
 
 
 class SuperField(AbstractContainerField):
@@ -51,7 +51,9 @@ class ArrayField(AbstractContainerField):
             return len(self._value)
 
         def __getitem__(self, idx):
-            if isinstance(idx, slice):
+            if isinstance(idx, str):
+                res = super().__getitem__(idx)
+            elif isinstance(idx, slice):
                 res = []
                 for it in islice(self._value, idx.start, idx.stop, idx.step):
                     res.append(it.__get__(self._instance))
@@ -75,8 +77,8 @@ class ArrayField(AbstractContainerField):
             return instance._srddl._field_offset(field, fields=tuple(self._value))
 
         @property
-        def size(self):
-            return sum(it.__get__(self._instance).size for it in self._value)
+        def _size(self):
+            return sum(it.__get__(self._instance)['size'] for it in self._value)
 
         @property
         def value(self):
