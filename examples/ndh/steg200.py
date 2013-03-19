@@ -2,8 +2,9 @@
 
 import sys
 
-import srddl.models as sm
+import srddl.data as sd
 import srddl.fields as sf
+import srddl.models as sm
 
 class UnknownChunk(sm.Struct):
     pad = sf.PaddingField(1)
@@ -17,9 +18,7 @@ class UnknownFile(sm.Struct):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.exit('usage: {} [stream_file]')
+        sys.exit('usage: {} streamFile.bin')
 
-    with open(sys.argv[1], 'rb') as f:
-        data = f.read()
-
-    s = UnknownFile(data, 0)
+    with sd.FileData(sys.argv[1]) as data:
+        s = UnknownFile(data, 0)

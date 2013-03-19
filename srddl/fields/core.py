@@ -2,12 +2,11 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
-import struct
+import srddl.exceptions as se
+import srddl.core.helpers as sch
 
 from srddl.core.fields import AbstractField, BoundValue
 
-import srddl.exceptions as se
-import srddl.core.helpers as sch
 
 class IntValue(BoundValue):
     def __index__(self):
@@ -31,14 +30,14 @@ class IntField(AbstractField):
     def __get__(self, instance, owner=None):
         sig, offset = self._signature(instance), self._ioffset(instance)
         res = IntValue(self, offset, self._isize(instance))
-        v = struct.unpack_from(sig, instance.buf, offset)[0]
+        v = instance._srddl.data.unpack_from(sig, offset)[0]
         res.initialize(self._values.get(v, v))
         return res
 
     def __set__(self, instance, value):
         sig = self._signature(instance)
         val = ((1 << (self._isize(instance) * 8)) - 1) & value
-        struct.pack_into(sig, instance.buf, self._ioffset(instance), val)
+        instance._srddl.data.pack_into(sig, self._ioffset(instance), val)
 
     def _isize(self, instance):
         return self._size
@@ -60,7 +59,7 @@ class ByteArrayField(AbstractField):
     def __get__(self, instance, owner=None):
         sig = self._signature(instance)
         res = ByteArrayValue(instance, self._ioffset(instance), self._isize(instance))
-        v = struct.unpack_from(sig, instance.buf, self._ioffset(instance))[0]
+        v = instance._srddl.data.unpack_from(sig, self._ioffset(instance))[0]
         res.initialize(v)
         return res
 
@@ -69,7 +68,7 @@ class ByteArrayField(AbstractField):
         val = value.ljust(size, '\x00')
         if len(val) != size:
             raise TypeError()
-        struct.pack_into(sig, instance.bug, self._ioffset(instance), val)
+        instance._srddl.data.pack_into(sig, self._ioffset(instance), val)
 
     def _isize(self, instance):
         return self._reference_value(instance, self._size)

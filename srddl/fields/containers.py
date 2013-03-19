@@ -36,7 +36,8 @@ class SuperField(AbstractContainerField):
         super().__init__(*args, **kwargs)
 
     def initialize(self, instance):
-        self._set_data(instance, self._cls(instance.buf, self._ioffset(instance)))
+        obj = self._cls(instance._srddl.data, self._ioffset(instance))
+        self._set_data(instance, obj)
 
     def _field_offset(self, instance, field):
         struct = self._get_data(instance)
@@ -96,7 +97,7 @@ class ArrayField(AbstractContainerField):
         for _ in range(dim):
             tmp = copy.copy(self._desc)
             data.append(tmp)
-        res = ArrayField._ArrayInner(instance, self._ioffset(instance), None)
+        res = ArrayField._ArrayInner(instance, self._ioffset(instance))
         res.initialize(data)
         self._set_data(instance, res)
         for it in data:

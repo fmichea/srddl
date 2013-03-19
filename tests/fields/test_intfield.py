@@ -1,5 +1,6 @@
 import pytest
 
+import srddl.data as sd
 import srddl.fields as sf
 import srddl.models as sm
 
@@ -42,6 +43,6 @@ import srddl.models as sm
 def test_intfield(args, kwargs, buf, expected):
     class Foo(sm.Struct):
         bar = sf.IntField(*args, **kwargs)
-    foo = Foo(bytes.fromhex(buf), 0)
+    foo = Foo(sd.Data(bytes.fromhex(buf)), 0)
     assert(foo.bar == expected)
     assert(foo.bar['size'] == (len(buf) / 2))
