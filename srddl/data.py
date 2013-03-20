@@ -11,13 +11,14 @@ class Data:
         try: self.buf[0] = self.buf[0]
         except: self.ro = True
 
+    def unpack_from(self, frmt, offset):
+        return struct.unpack_from(frmt, self.buf, offset)
+
     def pack_into(self, frmt, offset, *args):
         if self.ro:
             raise Exception('fu')
         struct.pack_into(frmt, self.buf, offset, *args)
 
-    def unpack_from(self, frmt, offset):
-        return struct.unpack_from(frmt, self.buf, offset)
 
 
 class FileData(Data):
