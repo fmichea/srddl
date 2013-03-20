@@ -11,6 +11,9 @@ class Data:
         try: self.buf[0] = self.buf[0]
         except: self.ro = True
 
+    def __del__(self):
+        self.close()
+
     def unpack_from(self, frmt, offset):
         return struct.unpack_from(frmt, self.buf, offset)
 
@@ -19,6 +22,8 @@ class Data:
             raise Exception('fu')
         struct.pack_into(frmt, self.buf, offset, *args)
 
+    def close(self):
+        pass
 
 
 class FileData(Data):
@@ -31,9 +36,6 @@ class FileData(Data):
         self.f = open(filename, mode[0])
         super().__init__(mmap.mmap(self.f.fileno(), 0, prot=mode[1]))
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
+    def close(self):
         self.buf.close()
         self.f.close()
