@@ -2,6 +2,7 @@
 # the point of view of the user (writer of a template).
 
 import sys
+import functools
 
 import srddl.data as sd
 import srddl.fields as sf
