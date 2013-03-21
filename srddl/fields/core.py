@@ -24,7 +24,7 @@ class IntField(AbstractField):
         self._endianess = kwargs.pop('endianess', IntField.Endianess.LITTLE)
         self._values = dict()
         for it in kwargs.pop('values', []):
-            self._values[it.value] = it
+            self._values[it['value']] = it
         super().__init__(*args, **kwargs)
 
     def decode(self, instance, offset):
