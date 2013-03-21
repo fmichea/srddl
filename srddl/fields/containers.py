@@ -8,19 +8,23 @@ from itertools import islice
 
 import srddl.exceptions as se
 
-from srddl.core.fields import AbstractField, BoundValue
+from srddl.core.fields import AbstractField, BoundValue, reference_value
+from srddl.core.offset import Size
 from srddl.models import Struct
 
 
 class AbstractContainerField(AbstractField):
-    def __get__(self, instance, owner=None):
-        return self._get_data(instance)
-
-    def __set__(self, instance, value):
+    def encode(self, data, offset, size):
         raise se.ROContainerError()
 
-    def _isize(self, instance):
-        return self._get_data(instance)['size']
+
+class SuperFieldBoundValue(BoundValue):
+    def __getattr__(self, attr_name):
+        return getattr(self.__getitem__('value'), attr_name)
+
+    @property
+    def _size(self):
+        return self._value['size']
 
 
 class SuperField(AbstractContainerField):
@@ -35,76 +39,63 @@ class SuperField(AbstractContainerField):
         self._cls = cls
         super().__init__(*args, **kwargs)
 
-    def initialize(self, instance):
-        obj = self._cls(instance._srddl.data, self._ioffset(instance))
-        self._set_data(instance, obj)
+    def decode(self, instance, offset):
+        return self._cls(instance['data'], offset)
 
-    def _field_offset(self, instance, field):
-        struct = self._get_data(instance)
-        if field is struct:
-            return 0
-        return struct._srddl._field_offset(field)
+    class Meta:
+        boundvalue_class = SuperFieldBoundValue
+
+
+class ArrayFieldBoundValue(BoundValue):
+    def __len__(self):
+        return len(self._value)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, str):
+            res = super().__getitem__(idx)
+        elif isinstance(idx, slice):
+            res = []
+            for it in islice(self._value, idx.start, idx.stop, idx.step):
+                res.append(it.__get__(self._instance))
+        else:
+            res = self._value[idx].__get__(self._instance)
+        return res
+
+    def __setitem__(self, idx, value):
+        if isinstance(idx, slice):
+            tmp = zip(islice(self._value, idx.start, idx.stop, idx.step), value)
+            for it, value in tmp:
+                it.__set__(self._instance, value)
+        else:
+            self._value[idx].__set__(self._instance, value)
+
+    def __iter__(self):
+        for it in self._value:
+            yield it.__get__(self._instance)
+
+    @property
+    def _size(self):
+        res = Size()
+        for it in self._value:
+            res += it.__get__(self._instance)['size']
+        return res
 
 
 class ArrayField(AbstractContainerField):
-    class _ArrayInner(BoundValue):
-        def __len__(self):
-            return len(self._value)
-
-        def __getitem__(self, idx):
-            if isinstance(idx, str):
-                res = super().__getitem__(idx)
-            elif isinstance(idx, slice):
-                res = []
-                for it in islice(self._value, idx.start, idx.stop, idx.step):
-                    res.append(it.__get__(self._instance))
-            else:
-                res = self._value[idx].__get__(self._instance)
-            return res
-
-        def __setitem__(self, idx, value):
-            if isinstance(idx, slice):
-                tmp = zip(islice(self._value, idx.start, idx.stop, idx.step), value)
-                for it, value in tmp:
-                    it.__set__(self._instance, value)
-            else:
-                self._value[idx].__set__(self._instance, value)
-
-        def __iter__(self):
-            for it in self._value:
-                yield it.__get__(self._instance)
-
-        def _field_offset(self, instance, field):
-            return instance._srddl._field_offset(field, fields=tuple(self._value))
-
-        @property
-        def _size(self):
-            return sum(it.__get__(self._instance)['size'] for it in self._value)
-
-        @property
-        def value(self):
-            return list(iter(self))
-
-
     def __init__(self, dim, desc, *args, **kwargs):
         self._dim, self._desc = dim, desc
         if not isinstance(desc, AbstractField):
             raise se.ArrayError()
         super().__init__(*args, **kwargs)
 
-    def initialize(self, instance):
-        data, dim = [], self._reference_value(instance, self._dim)
+    def decode(self, instance, offset):
+        data, dim = [], reference_value(instance, self._dim)
         for _ in range(dim):
-            tmp = copy.copy(self._desc)
-            data.append(tmp)
-        res = ArrayField._ArrayInner(instance, self._ioffset(instance))
-        res.initialize(data)
-        self._set_data(instance, res)
-        for it in data:
-            it.initialize(instance)
+            desc = copy.copy(self._desc)
+            desc.initialize(instance, offset)
+            data.append(desc)
+            offset += desc.__get__(instance)['size']
+        return data
 
-    def _field_offset(self, instance, field):
-        return self._get_data(instance)._field_offset(instance, field)
-
-    def _reload(self, instance, field, finstance):
-        self.initialize(instance)
+    class Meta:
+        boundvalue_class = ArrayFieldBoundValue

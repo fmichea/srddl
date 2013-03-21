@@ -8,7 +8,7 @@ import srddl.core.helpers as sch
 from srddl.core.fields import AbstractField, BoundValue
 
 
-class IntValue(BoundValue):
+class IntFieldBoundValue(BoundValue):
     def __index__(self):
         return self.value
 
@@ -27,51 +27,34 @@ class IntField(AbstractField):
             self._values[it.value] = it
         super().__init__(*args, **kwargs)
 
-    def __get__(self, instance, owner=None):
-        sig, offset = self._signature(instance), self._ioffset(instance)
-        res = IntValue(self, offset, self._isize(instance))
-        v = instance._srddl.data.unpack_from(sig, offset)[0]
-        res.initialize(self._values.get(v, v))
-        return res
+    def decode(self, instance, offset):
+        return instance['data'].unpack_from(self._sig(self._size), offset.byte)[0]
 
-    def __set__(self, instance, value):
-        sig = self._signature(instance)
-        val = ((1 << (self._isize(instance) * 8)) - 1) & value
-        instance._srddl.data.pack_into(sig, self._ioffset(instance), val)
+    def encode(self, data, offset, value):
+        instance['data'].pack_into(self._sig(self._size), offset.byte, value)
 
-    def _isize(self, instance):
-        return self._size
-
-    def _signature(self, instance):
+    def _sig(self, size):
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
-        sig = self._endianess + 'bhiq'[log2[self._isize(instance)]]
+        sig = self._endianess + 'bhiq'[log2[size]]
         return (sig if self._signed else sig.upper())
 
+    class Meta:
+        boundvalue_class = IntFieldBoundValue
 
-class ByteArrayValue(BoundValue):
-    pass
 
 class ByteArrayField(AbstractField):
     def __init__(self, size, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._size = size
 
-    def __get__(self, instance, owner=None):
-        sig = self._signature(instance)
-        res = ByteArrayValue(instance, self._ioffset(instance), self._isize(instance))
-        v = instance._srddl.data.unpack_from(sig, self._ioffset(instance))[0]
-        res.initialize(v)
-        return res
+    def decode(self, instance, offset):
+        size = self.__get__(instance)['size']
+        return instance['data'].unpack_from(self._sig(size), offset.byte)[0]
 
-    def __set__(self, instance, value):
-        sig, size = self._signature(instance), self._isize(instance)
-        val = value.ljust(size, '\x00')
-        if len(val) != size:
-            raise TypeError()
-        instance._srddl.data.pack_into(sig, self._ioffset(instance), val)
+    def encode(self, instance, offset, value):
+        size = self.__get__(instance)['size']
+        value = value.ljust(size.byte, '\x00')[:size.byte]
+        instance['data'].pack_into(self._sig(size), offset.byte, value)
 
-    def _isize(self, instance):
-        return self._reference_value(instance, self._size)
-
-    def _signature(self, instance):
-        return '{}s'.format(self._isize(instance))
+    def _sig(self, size):
+        return '{}s'.format(size.byte)

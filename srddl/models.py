@@ -7,6 +7,7 @@ import functools
 import srddl.exceptions as se
 import srddl.data as sd
 
+from srddl.core.offset import Offset, Size
 from srddl.core.fields import AbstractField, FieldInitStatus
 
 class _SrddlInternal:
@@ -17,12 +18,12 @@ class _SrddlInternal:
     '''
 
     def __init__(self, instance, data, offset):
-        self.instance, self.data, self.offset = instance, data, offset
+        self.instance, self.data = instance, data
+        self.offset, self.cur_offset = Offset(offset), Offset()
 
         # Some meta data on fields.
         self.fields = list()
         self.fields_data = dict()
-        self.fields_status = dict()
 
         # The namespace contains all the fields of the structure.
         self.namespace = collections.OrderedDict()
@@ -32,38 +33,15 @@ class _SrddlInternal:
             if isinstance(field, AbstractField):
                 self.fields.append(field_name)
                 self.namespace[field_name] = field
-                field.initialize(self.instance)
+                field.initialize(self.instance, self.offset + self.cur_offset)
+                self.cur_offset += field.__get__(self.instance)['size']
 
-    def _isize(self, instance, fields=None):
-        res = 0
-        if fields is None:
-            fields = self.namespace.values()
-        for field_desc in fields:
-            res += field_desc.__get__(instance)['size']
+    @property
+    def _size(self):
+        res = Size()
+        for field_desc in self.namespace.values():
+            res += field_desc.__get__(self.instance)['size']
         return res
-
-    @functools.lru_cache()
-    def _field_offset(self, field, fields=None):
-        offset = self.offset
-        if fields is None:
-            fields = self.namespace.values()
-        for field_desc in fields:
-            if field_desc is field:
-                return offset
-            # This protects the referencing of other fields that are not
-            # initialized yet, during initialization of one field.
-            status = field_desc._get_status(self.instance)
-            reason = 'unitialized structure fields reached.'
-            if status == FieldInitStatus.KO:
-                raise se.FieldNotFoundError(self.instance, field, reason)
-            try:
-                return offset + field_desc._field_offset(self.instance, field)
-            except se.FieldNotFoundError:
-                if status == FieldInitStatus.INIT:
-                    raise se.FieldNotFoundError(self.instance, field, reason)
-                offset += field_desc.__get__(self.instance)['size']
-        reason = 'end of structure reached.'
-        raise se.FieldNotFoundError(self.instance, field, reason)
 
 
 class _MetaStruct(type):
@@ -108,8 +86,9 @@ class Struct(metaclass=_MetaStruct):
 
     def __getitem__(self, item):
         properties = {
-            'size': lambda: self._srddl._isize(self),
+            'size': lambda: self._srddl._size,
             'offset': lambda: self._srddl.offset,
+            'data': lambda: self._srddl.data
         }
         if item not in properties:
             raise KeyError(item)

@@ -10,6 +10,7 @@ import srddl.core.helpers as sch
 import srddl.exceptions as se
 
 from srddl.core.signals import Signal
+from srddl.core.offset import Offset, Size
 
 FieldInitStatus = sch.enum(KO=0, INIT=1, OK=2)
 
@@ -59,7 +60,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         initialize = kwds.get('initialize')
         if initialize is not None:
             @functools.wraps(initialize)
-            def wrapper(self, instance):
+            def wrapper(self, instance, offset):
                 # There are three states to the initialization process:
                 #
                 #   FieldInitStatus.KO, FieldInitStatus.INIT, FieldInitStatus.OK
@@ -70,15 +71,14 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 #
                 # Since we want inheritance to work, we need to set the status
                 # only on the call on a instance that is the first one.
-                status = self._get_status(instance)
-                self._set_status(instance, FieldInitStatus.INIT)
-# FIXME: performance fix.
-#                if self._sig is None:
-#                    self._sig = 'reload-{:x}_{:x}'.format(id(self), id(instance))
-#                    REFERENCE_SIGNAL.create(self._sig)
-                initialize(self, instance)
+                try:
+                    status = self._get_data(instance, 'status')
+                except se.NoFieldDataError:
+                    status = FieldInitStatus.KO
+                self._set_data(instance, 'status', FieldInitStatus.INIT)
+                initialize(self, instance, offset)
                 if status != FieldInitStatus.INIT:
-                    self._set_status(instance, FieldInitStatus.OK)
+                    self._set_data(instance, 'status', FieldInitStatus.OK)
             kwds['initialize'] = wrapper
 
         __get__ = kwds.get('__get__')
@@ -86,182 +86,93 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
             @functools.wraps(__get__)
             @functools.lru_cache()
             def wrapper(self, instance, owner=None):
-                if self._get_status(instance) != FieldInitStatus.OK:
+                if self._get_data(instance, 'status') != FieldInitStatus.OK:
                     raise se.FieldNotReadyError(self)
-                # FIXME: performance fix. REFERENCE_SIGNAL.trigger('current-ref', self, instance)
                 res = __get__(self, instance, owner=owner)
                 from srddl.models import Struct
                 if not (res is None or isinstance(res, (BoundValue, Struct))):
                     raise se.NotABoundValueError(self)
                 return res
             kwds['__get__'] = wrapper
-
-# FIXME: performance fix.
-#        __set__ = kwds.get('__set__')
-#        if __set__ is not None:
-#            @functools.wraps(__set__)
-#            def wrapper(self, instance, value):
-#                __set__(self, instance, value)
-#                REFERENCE_SIGNAL.trigger(self._sig)
-#            kwds['__set__'] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
+def reference_value(instance, ref, type_=int):
+    '''
+    This function permits to retrieve the value of a Field, a lambda or a
+    BoundValue until it is valid with ``type`` (``int`` by default). If it
+    is none of theses types, it raises InvalidReferenceError. It may also
+    raise FieldNotReady if the lambda/function fetches an uninitialized
+    field.
+    '''
+    def inner(ref):
+        if isinstance(ref, type_):
+            # Dereference finally gave a good value, so we return it
+            # directly.
+            return ref
+        elif isinstance(ref, AbstractField):
+            try:
+                #instance._srddl._field_offset(ref)
+                pass
+            except se.FieldNotFoundError:
+                reason = 'field is not in structure or not initialized.'
+                raise se.InvalidReferenceError(ref, reason)
+            return inner(ref.__get__(instance))
+        elif isinstance(ref, BoundValue):
+            res = ref['value']
+            if not isinstance(res, type_):
+                reason = 'BoundValue\'s value is not of the right type.'
+                raise se.InvalidReferenceError(ref, reason)
+            return res
+        elif inspect.ismethod(ref) or inspect.isfunction(ref):
+            return inner(ref(instance))
+        reason = 'invalid reference type {type_}, see documentation.'
+        raise se.InvalidReferenceError(reason, type_=type(ref))
+    return inner(ref)
 
-class AbstractField(metaclass=_MetaAbstractField):
-    _fields = ['description']
+class FindMeAName:
+    fields = []
 
     def __init__(self, *args, **kwargs):
         '''
-        If you call it you shouldn't use one of these attributes before (they
-        will be overridden).
-
-            - description
-
-        You can overwrite them after the call to init though. Works like Value
-        constructor. First positional arguments in their order are taken, to
-        match attributes list above, then keyword arguments overwrite it.
+        Init function of this class has a specific behavior. Positional
+        arguments are are in the order of the ``fields`` list. Then you can
+        override specific values with keyword arguments.
         '''
-        vals = dict(zip(self.__class__._fields, args))
+        vals = dict(zip(self.__class__.fields, args))
         vals.update(kwargs)
-        for name in Value._fields:
+        for name in self.__class__.fields:
+            if name not in vals:
+                continue
             setattr(self, '_{}'.format(name), vals.get(name, None))
-        self._sig = None
 
-    def __getattr__(self, attr_name):
-        if attr_name not in self.__class__._fields:
+    def __getitem__(self, attr_name):
+        '''This function permits to access the attributes of the object.'''
+        if attr_name not in self.__class__.fields:
             raise AttributeError
         return getattr(self, '_{}'.format(attr_name), None)
 
-    def initialize(self, instance):
-        '''
-        This method can be overridden to initialize data against the instance.
-        This is mostly used for containers, returning complicated structures.
+    def copy(self, other):
+        for field in type(other).fields:
+            setattr(self, '_{}'.format(field), other[field])
 
-        You can use helper functions _get_data and _set_data to store data per
-        instance. It can then be retrieved in any function.
-        '''
 
-    @abc.abstractmethod
-    def __get__(self, instance, owner=None):
-        '''
-        This function must return the decoded value of the field. It should
-        always be a BoundValue, though.
-        '''
+class Value(FindMeAName):
+    '''
+    The Value class is used by the ``values`` keyword parameter of certain
+    fields. It is used to define documentation on values possible. The usage
+    of this values is dependent on the Field, see their documentation.
 
-    @abc.abstractmethod
-    def __set__(self, instance, value):
-        '''This function must set the new value of the field.'''
+    The Value exports the following attributes:
+        - value
+        - name
+        - description
+    '''
 
-    @abc.abstractmethod
-    def _isize(self, instance):
-        '''
-        This function must return the size (in bytes) of the current field.
-        This function is used along with ``offset`` to find position of all
-        fields in the structure and map them correctly.
-        '''
-
-    def _ioffset(self, instance):
-        '''
-        This function must return the starting offset of the field. It is a
-        wrapper arround ``_field_offset`` called on self.
-        '''
-        return instance._srddl._field_offset(self)
-
-    def _get_data(self, instance):
-        '''
-        Returns the data associated with the field. This data is stored in
-        the special attribute _srddl of the instance, so it is unique for each
-        instance. Note that if the data is not initialized, the this function
-        will raise .
-        '''
-        key = id(self)
-        if key not in instance._srddl.fields_data:
-            raise se.NoFieldDataError()
-        return instance._srddl.fields_data[key]
-
-    def _set_data(self, instance, value):
-        '''Sets the data associated with the field.'''
-        instance._srddl.fields_data[id(self)] = value
-
-    def _field_offset(self, instance, field):
-        '''
-        Calculates the offset of an inner field, 0 being the beginning of the
-        current field. If the field is not a subfield of the current field, it
-        must raise FieldNotFoundError. Don't forget to call this function on
-        subfields.
-        '''
-        reason = 'Not a container.'
-        raise se.FieldNotFoundError(instance, field, reason)
-
-    def _get_status(self, instance):
-        '''
-        The status of the field specifies if it is initialized, currently
-        initializing or totally not ready, meaning its value is not usable. This
-        function is always available and cannot fail.
-        '''
-        return instance._srddl.fields_status.get(id(self), FieldInitStatus.KO)
-
-    def _set_status(self, instance, value):
-        '''
-        This method permits to set the status of the field against a certain
-        instance. The value should be a valid value in enum FieldInitStatus.
-        '''
-        instance._srddl.fields_status[id(self)] = value
-
-    def _reference_value(self, instance, ref, type_=int):
-        '''
-        This function permits to retrieve the value of a Field, a lambda or a
-        BoundValue until it is valid with ``type`` (``int`` by default). If it
-        is none of theses types, it raises InvalidReferenceError. It may also
-        raise FieldNotReady if the lambda/function fetches an uninitialized
-        field.
-        '''
-# FIXME: performance fix.
-#        def handler(field, finstance):
-#            func = functools.partial(self._reload, instance, field, finstance)
-#            REFERENCE_SIGNAL.subscribe(field._sig, func)
-        def inner(ref):
-            if isinstance(ref, type_):
-                # Dereference finally gave a good value, so we return it
-                # directly.
-                return ref
-            elif isinstance(ref, AbstractField):
-                try:
-                    instance._srddl._field_offset(ref)
-                except se.FieldNotFoundError:
-                    reason = 'field is not in structure or not initialized.'
-                    raise se.InvalidReferenceError(ref, reason)
-                return inner(ref.__get__(instance))
-            elif isinstance(ref, BoundValue):
-                res = ref.value
-                if not isinstance(res, type_):
-                    reason = 'BoundValue\'s value is not of the right type.'
-                    raise se.InvalidReferenceError(ref, reason)
-                return res
-            elif inspect.ismethod(ref) or inspect.isfunction(ref):
-                return inner(ref(instance))
-            reason = 'invalid reference type {type_}, see documentation.'
-            raise se.InvalidReferenceError(reason, type_=type(ref))
-# FIXME: performance fix.
-#        hdl = REFERENCE_SIGNAL.subscribe('current-ref', handler)
-#        res = inner(ref)
-#        REFERENCE_SIGNAL.unsubscribe('current-ref', hdl)
-#        return res
-        return inner(ref)
-
-    def _reload(self, instance, field, finstance):
-        '''
-        Reload data, since a dependency changed. If you reload your field and
-        its data changes, in any way, you *must* trigger self.sig.
-        '''
-
-# FIXME: performance fix.
-#    def __del__(self):
-#        REFERENCE_SIGNAL.trigger(self._sig)
+    fields = ['value', 'name', 'description']
 
 
 @functools.total_ordering
-class BoundValue(metaclass=_MetaAbstractDescriptor):
+class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     '''
     The BoundValue class represents a value obtained by fetching a Field. Each
     field may define and return a specialized version of the BoundValue,
@@ -276,61 +187,34 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    _fields = ['offset', 'size']
+    fields = ['offset', 'size'] + Value.fields
 
-    def __init__(self, instance, *args, **kwargs):
-        self._instance = instance
-
-        vals = dict(zip(self.__class__._fields, args))
-        vals.update(kwargs)
-        for name in self.__class__._fields:
-            if name in vals:
-                setattr(self, '_{}'.format(name), vals.get(name))
-
-    def __getattr__(self, attr_name):
-        '''
-        Little helper to avoid defining a getter for each public value of the
-        class. It also copies public values of the Value class, since they are
-        also available properties of a BoundValue.
-        '''
-        lst = Value._fields
-        if attr_name not in lst:
-            raise AttributeError
-        return getattr(self, '_{}'.format(attr_name), None)
+    def __init__(self, instance, field, offset):
+        super().__init__(offset)
+        self._field, self._instance = field, instance
 
     def __getitem__(self, item):
-        if item not in BoundValue._fields:
-            raise KeyError(item)
-        return getattr(self, '_{}'.format(item))
+        if item != 'value' and item in Value.fields:
+            # Force decoding of value for those fields.
+            _ = self._value
+        return super().__getitem__(item)
 
-    def __repr__(self):
-        '''Repesentation of a Bound Value. Really verbose.'''
-        pp = pprint.PrettyPrinter(indent=2)
-        class_name = self.__class__.__module__ + '.' + self.__class__.__name__
-        return '<{} at {:#x} with value {}{} for instance {:#x}>'.format(
-            class_name, id(self), pp.pformat(self.value),
-            ' ({})'.format(self.name) if self.name is not None else '',
-            id(self._instance)
-        )
+    @property
+    def _size(self):
+        return Size(byte=reference_value(self._instance, self._field._size))
 
-    def initialize(self, value):
-        '''
-        This is the function used to set the value asociated with the
-        BoundValue. If a Value is given, it is copied, else the value is
-        directly stored with no modification.
-        '''
-        if isinstance(value, Value):
-            for field_name in Value._fields:
-                val = getattr(value, field_name)
-                setattr(self, '_{}'.format(field_name), val)
-        else:
-            self._value = value
+    @property
+    def _value(self):
+        res = self._field.decode(self._instance, self._offset)
+        if isinstance(res, Value):
+            self.copy(value)
+        return res
 
     def __eq__(self, other):
         # This function is needed by functools.total_ordering.
         if isinstance(other, BoundValue):
-            return self.value == other.value
-        return self.value == other
+            return self._value == other._value
+        return self._value == other
 
     def __lt__(self, other):
         # This function is needed by functools.total_ordering.
@@ -339,32 +223,54 @@ class BoundValue(metaclass=_MetaAbstractDescriptor):
         return self.value < other
 
 
-class Value:
-    '''
-    The Value class is used by the ``values`` keyword parameter of certain
-    fields. It is used to define documentation on values possible. The usage
-    of this values is dependent on the Field, see their documentation.
+class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
+    fields = ['description']
 
-    The Value exports the following attributes:
-        - value
-        - name
-        - description
-    '''
+    class _MetaBase:
+        aligned = True
+        boundvalue_class = BoundValue
 
-    _fields = ['value', 'name', 'description']
+    def initialize(self, instance, offset):
+        if self._metaconf_value('aligned') and not offset.aligned():
+            raise Exception('bit alignment not respected.')
+        bv = self._metaconf_value('boundvalue_class')(instance, self, offset)
+        self._set_data(instance, 'boundvalue', bv)
+        return bv['size']
 
-    def __init__(self, *args, **kwargs):
-        '''
-        Init function has a specific behavior. Positional arguments are are in
-        the order of the fields specified in Value's documentation. Then you can
-        override specific values with keyword arguments.
-        '''
-        vals = dict(zip(self.__class__._fields, args))
-        vals.update(kwargs)
-        for name in Value._fields:
-            setattr(self, '_{}'.format(name), vals.get(name, None))
+    @functools.lru_cache()
+    def __get__(self, instance, owner=None):
+        return self._get_data(instance, 'boundvalue')
 
-    def __getattr__(self, attr_name):
-        if attr_name not in self.__class__._fields:
-            raise AttributeError
-        return getattr(self, '_{}'.format(attr_name), None)
+    def __set__(self, instance, value):
+        '''This function must set the new value of the field.'''
+        bv = self.__get__(instance)
+        offset = instance['offset'] + bv['offset']
+        self.encode(instance, offset, value)
+
+    @abc.abstractmethod
+    def decode(self, instance, offset):
+        pass
+
+    @abc.abstractmethod
+    def encode(self, instance, offset, value):
+        pass
+
+    def _data_key(self, name):
+        return 'data-{:x}_{}'.format(id(self), name)
+
+    def _get_data(self, instance, name):
+        key = self._data_key(name)
+        if key not in instance._srddl.fields_data:
+            raise se.NoFieldDataError()
+        return instance._srddl.fields_data[key]
+
+    def _set_data(self, instance, name, value):
+        '''Sets the data associated with the field.'''
+        instance._srddl.fields_data[self._data_key(name)] = value
+
+
+    def _metaconf_value(self, key):
+        try:
+            return getattr(getattr(self, 'Meta'), key)
+        except AttributeError:
+            return getattr(self.__class__._MetaBase, key)
