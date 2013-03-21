@@ -1,4 +1,4 @@
-# srddl.core.offset - Helps describe offsets and sizes.
+# srddl/core/offset.py - Helps describe offsets and sizes.
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
@@ -11,6 +11,9 @@ class _Offset:
             self.byte, self.bit = byte.byte, byte.bit
         else:
             self.byte, self.bit = byte, bit
+
+    def __hash__(self):
+        return hash('{}::{}'.format(self.byte, self.bit))
 
     def __eq__(self, other):
         # This function is needed by functools.total_ordering.
