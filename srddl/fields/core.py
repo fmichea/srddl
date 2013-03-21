@@ -17,9 +17,10 @@ class IntField(AbstractField):
     Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
 
     def __init__(self, *args, **kwargs):
-        self._size = kwargs.pop('size', IntField.Size.BYTE)
-        if self._size not in IntField.Size.values():
-            raise ValueError("'size' is not valid.")
+        if not hasattr(self, '_size'):
+            self._size = kwargs.pop('size', IntField.Size.BYTE)
+            if self._size not in IntField.Size.values():
+                raise ValueError("'size' is not valid.")
         self._signed = kwargs.pop('signed', False)
         self._endianess = kwargs.pop('endianess', IntField.Endianess.LITTLE)
         self._values = dict()
