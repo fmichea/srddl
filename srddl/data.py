@@ -5,7 +5,7 @@ import srddl.core.helpers as sch
 
 class Data:
     def __init__(self, buf, ro=False):
-        self.buf, self.ro = buf, ro
+        self.buf, self.ro, self._mapped = buf, ro, dict()
 
         # Probably not foolproof...
         try: self.buf[0] = self.buf[0]
@@ -13,6 +13,26 @@ class Data:
 
     def __del__(self):
         self.close()
+
+    def mapped(self, offset, fltr=None):
+        if offset not in self._mapped:
+            raise Exception('fuuuu')
+        res = [x for x in self._mapped[offset] if fltr is None or fltr(x)]
+        if len(res) == 1:
+            return res[0]
+        raise Exception('fiiiiiiiiii')
+
+    def map(self, offset, struct):
+        s = struct(self, offset)
+        self._mapped[offset] = self._mapped.get(offset, []) + [s]
+        s._setup()
+        return s
+
+    def map_array(self, offset, nb, struct):
+        if offset in self.mapped:
+            raise Exception('fuuuuu')
+        for _ in range(nb):
+            offset += self.map(offset, struct)['size']
 
     def unpack_from(self, frmt, offset):
         return struct.unpack_from(frmt, self.buf, offset)
