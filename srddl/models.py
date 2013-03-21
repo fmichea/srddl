@@ -93,3 +93,10 @@ class Struct(metaclass=_MetaStruct):
         if item not in properties:
             raise KeyError(item)
         return properties[item]()
+
+    def _setup(self):
+        '''
+        This function permits to map other structures to different part of
+        file. When writing a structure, you may want to say that you can map
+        some data or other strutures.
+        '''
