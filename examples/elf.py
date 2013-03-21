@@ -11,8 +11,14 @@ import srddl.models as sm
 
 # Atomic types.
 class ElfN_Addr(sf.IntField):
-    def _isize(self, struct):
-        return struct.e_indent.ei_class.value * 4
+    @functools.lru_cache()
+    def _size(self, struct):
+        try:
+            header = struct['data'].mapped(0)
+        except:
+            header = struct
+        res = header.e_indent.ei_class['value'] * 4
+        return res
 
 class ElfN_Off(ElfN_Addr): pass
 
@@ -91,11 +97,6 @@ class ElfN_Ehdr(sm.Struct):
 
 if __name__ == '__main__':
     prog = '/bin/ls' if len(sys.argv) == 1 else sys.argv[1]
-    with open(prog, 'rb') as f:
-        s = ElfN_Ehdr(f.read(), 0)
-        for field_name in s._srddl.fields:
-            val = getattr(s, field_name)
-            print(field_name + ':', val)
-            if field_name == 'e_indent':
-                for it in val._srddl.fields:
-                    print('\t' + it + ':', getattr(val, it))
+
+    f = sd.FileData(prog)
+    f.map(0, ElfN_Ehdr)
