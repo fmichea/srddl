@@ -21,4 +21,4 @@ if __name__ == '__main__':
         sys.exit('usage: {} streamFile.bin')
 
     data = sd.FileData(sys.argv[1])
-    s = UnknownFile(data, 0)
+    data.map(0, UnknownFile)
