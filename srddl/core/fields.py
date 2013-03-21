@@ -94,6 +94,15 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                     raise se.NotABoundValueError(self)
                 return res
             kwds['__get__'] = wrapper
+
+        for func_name in ['decode']:
+            func = kwds.get(func_name)
+            if func is not None:
+                @functools.wraps(func)
+                @functools.lru_cache()
+                def wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+                kwds[func_name] = wrapper
         return super().__new__(cls, clsname, bases, kwds)
 
 def reference_value(instance, ref, type_=int):
