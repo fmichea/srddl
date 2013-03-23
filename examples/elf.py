@@ -26,6 +26,16 @@ class ElfN_Addr(sf.IntField):
 class ElfN_Off(ElfN_Addr): pass
 class IntFieldN(ElfN_Addr): pass
 
+class BitMaskFieldN(sf.BitMaskField):
+    @functools.lru_cache()
+    def _size(self, struct):
+        try:
+            header = struct['data'].mapped(0)
+        except:
+            header = struct
+        res = header.e_indent.ei_class['value'] * 4
+        return res
+
 # Structures
 EI_INDENT = 16
 
@@ -133,7 +143,7 @@ class ElfN_Phdr(sm.Struct):
     p_paddr = ElfN_Addr()
     p_filesz = IntFieldN()
     p_memsz = IntFieldN()
-    p_flags = sf.IntField(size=sf.IntField.Size.INT32, values=[
+    p_flags = sf.BitMaskField(size=sf.BitMaskField.Size.INT32, values=[
         sf.Value(0x1, 'PF_X'),
         sf.Value(0x2, 'PF_W'),
         sf.Value(0x4, 'PF_R'),
@@ -188,7 +198,7 @@ class ElfN_Shdr(sm.Struct):
         sf.Value(0x8fffffff, 'SHT_HIUSER'),
     ])
 
-    sh_flags = IntFieldN(values=[
+    sh_flags = BitMaskFieldN(values=[
         sf.Value(0x1, 'SHF_WRITE'),
         sf.Value(0x2, 'SHF_ALLOC'),
         sf.Value(0x4, 'SHF_EXECINSTR'),
