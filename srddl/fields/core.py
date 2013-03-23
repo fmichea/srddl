@@ -16,6 +16,9 @@ class IntField(AbstractField):
     Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
     Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
 
+    class Meta:
+        boundvalue_class = IntFieldBoundValue
+
     def __init__(self, *args, **kwargs):
         if not hasattr(self, '_size'):
             self._size = kwargs.pop('size', IntField.Size.BYTE)
@@ -40,9 +43,6 @@ class IntField(AbstractField):
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
         sig = self._endianess + 'bhiq'[log2[size.byte]]
         return (sig if self._signed else sig.upper())
-
-    class Meta:
-        boundvalue_class = IntFieldBoundValue
 
 
 class ByteArrayField(AbstractField):
