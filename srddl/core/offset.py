@@ -43,6 +43,9 @@ class _Offset:
             return self.__class__(byte=byte, bit=bit)
         return self.__class__(byte=(self.byte + other), bit=self.bit)
 
+    def __radd__(self, other):
+        return self + self.__class__(byte=other)
+
     def __sub__(self, other):
         if isinstance(other, _Offset):
             bit = self.bit - other.bit
