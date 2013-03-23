@@ -5,12 +5,14 @@
 import srddl.exceptions as se
 import srddl.core.helpers as sch
 
-from srddl.core.fields import AbstractField, BoundValue
+from srddl.core.offset import Size
+from srddl.core.fields import AbstractField, BoundValue, reference_value
 
 
 class IntFieldBoundValue(BoundValue):
     def __index__(self):
         return self._value
+
 
 class IntField(AbstractField):
     Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
@@ -61,3 +63,42 @@ class ByteArrayField(AbstractField):
 
     def _sig(self, size):
         return '{}s'.format(size.byte)
+
+
+class BitFieldBoundValue(IntFieldBoundValue):
+    @property
+    def _size(self):
+        size = Size(bit=reference_value(self._instance, self._field._size))
+        if not (0 < size.bit < 8):
+            return ValueError('not a good size.')
+        return size
+
+
+class BitField(AbstractField):
+    class Meta:
+        aligned = False
+        boundvalue_class = BitFieldBoundValue
+
+    def __init__(self, size, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._size = size
+
+    def decode(self, instance, offset):
+        size = self.__get__(instance)['size']
+        i = instance['data'].unpack_from('>H', offset.byte)[0]
+        mask = self._mask(size) << self._mask_offset(offset.bit, size)
+        return ((i & mask) >> self._mask_offset(offset.bit, size))
+
+    def encode(self, instance, offset, value):
+        size = self.__get__(instance)['size']
+        i = instance['data'].unpack_from('>H', offset.byte)[0]
+        mask = self._mask(size) << self._mask_offset(offset.bit, size)
+        res = (i & ((~mask) & 0xffff))
+        res |= (value & self._mask(size)) << self._mask_offset(offset.bit, size)
+        instance['data'].pack_into('>H', offset.byte, res)
+
+    def _mask(self, size):
+        return ((1 << size.bit) - 1)
+
+    def _mask_offset(self, bit, size):
+        return (16 - bit - size.bit)
