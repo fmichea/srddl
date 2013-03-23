@@ -35,7 +35,8 @@ class IntField(AbstractField):
 
     def decode(self, instance, offset):
         size = self.__get__(instance)['size']
-        return instance['data'].unpack_from(self._sig(size), offset.byte)[0]
+        res = instance['data'].unpack_from(self._sig(size), offset.byte)[0]
+        return self._values.get(res, res)
 
     def encode(self, data, offset, value):
         size = self.__get__(instance)['size']

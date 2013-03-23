@@ -211,6 +211,7 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
                 res += ' ({})'.format(self['name'])
         res += '>'
         return res
+
     def __getitem__(self, item):
         if item != 'value' and item in Value.fields:
             # Force decoding of value for those fields.
@@ -225,8 +226,13 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     def _value(self):
         res = self._field.decode(self._instance, self._offset)
         if isinstance(res, Value):
-            self.copy(value)
+            self.copy(res)
+            return res['value']
         return res
+
+    @_value.setter
+    def _value(self, value):
+        pass
 
     def __bool__(self):
         return bool(self._value)
