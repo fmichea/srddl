@@ -7,7 +7,10 @@ import functools
 @functools.total_ordering
 class _Offset:
     def __init__(self, byte=0, bit=0):
-        if isinstance(byte, _Offset):
+        from srddl.core.fields import BoundValue
+        if isinstance(byte, BoundValue):
+            self.byte, self.bit = byte['value'], bit
+        elif isinstance(byte, _Offset):
             self.byte, self.bit = byte.byte, byte.bit
         else:
             self.byte, self.bit = byte, bit

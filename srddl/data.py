@@ -18,21 +18,21 @@ class Data:
         self.close()
 
     def mapped(self, offset, fltr=None):
-        offset = self._real_offset(offset)
+        offset = Offset(offset)
         res = [x for x in self._mapped[offset] if fltr is None or fltr(x)]
         if len(res) == 1:
             return res[0]
         raise Exception('fiiiiiiiiii')
 
     def map(self, offset, struct):
-        offset = self._real_offset(offset)
+        offset = Offset(offset)
         s = struct(self, offset)
         self._mapped[offset] = self._mapped.get(offset, []) + [s]
         s._setup(self)
         return s
 
     def map_array(self, offset, nb, struct):
-        offset = self._real_offset(offset)
+        offset = Offset(offset)
         for _ in range(nb):
             offset += self.map(offset, struct)['size']
 
@@ -46,13 +46,6 @@ class Data:
 
     def close(self):
         pass
-
-    def _real_offset(self, offset):
-        if isinstance(offset, BoundValue):
-            return Offset(byte=offset['value'])
-        elif not isinstance(offset, Offset):
-            return Offset(byte=offset)
-        return offset
 
 
 class FileData(Data):
