@@ -219,6 +219,9 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
             self.copy(value)
         return res
 
+    def __bool__(self):
+        return bool(self._value)
+
     def __eq__(self, other):
         # This function is needed by functools.total_ordering.
         if isinstance(other, BoundValue):
