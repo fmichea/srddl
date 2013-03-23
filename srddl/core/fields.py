@@ -202,6 +202,15 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
         super().__init__(offset)
         self._field, self._instance = field, instance
 
+    def __repr__(self):
+        res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
+        if self['value'] is not None:
+            value = repr(self['value']).replace('\n', '\n    ')
+            res += ' with value {}'.format(value)
+            if self['name'] is not None:
+                res += ' ({})'.format(self['name'])
+        res += '>'
+        return res
     def __getitem__(self, item):
         if item != 'value' and item in Value.fields:
             # Force decoding of value for those fields.

@@ -88,6 +88,14 @@ class Struct(metaclass=_MetaStruct):
             raise Exception('fuu')
         self._srddl = _SrddlInternal(self, data, offset)
 
+    def __repr__(self):
+        args = [self.__class__.__name__, id(self), self['offset']]
+        res = '<{} at {:#x} at offset {}\n'.format(*args)
+        for field in self['fields']:
+            res += '    {} = {},\n'.format(field, getattr(self, field))
+        res += '>'
+        return res
+
     def __getitem__(self, item):
         properties = {
             'size': lambda: self._srddl._size,
