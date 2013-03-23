@@ -6,7 +6,7 @@ import srddl.exceptions as se
 import srddl.core.helpers as sch
 
 from srddl.core.offset import Size
-from srddl.core.fields import AbstractField, BoundValue, reference_value
+from srddl.core.fields import AbstractField, BoundValue, Value, reference_value
 
 
 class IntFieldBoundValue(BoundValue):
@@ -103,3 +103,20 @@ class BitField(AbstractField):
 
     def _mask_offset(self, bit, size):
         return (16 - bit - size.bit)
+
+
+class BitMaskField(IntField):
+    class Meta: pass
+
+    def decode(self, instance, offset):
+        nb = super().decode(instance, offset)
+        if isinstance(nb, Value):
+            return [nb]
+        res, mask = [], 0
+        for val_num, val in self._values.items():
+            if val_num & nb:
+                res.append(val)
+                mask |= val_num
+        if mask != nb:
+            res.append(nb ^ mask)
+        return (res if res else nb)
