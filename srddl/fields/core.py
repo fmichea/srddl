@@ -10,7 +10,7 @@ from srddl.core.fields import AbstractField, BoundValue
 
 class IntFieldBoundValue(BoundValue):
     def __index__(self):
-        return self.value
+        return self._value
 
 class IntField(AbstractField):
     Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
@@ -29,14 +29,16 @@ class IntField(AbstractField):
         super().__init__(*args, **kwargs)
 
     def decode(self, instance, offset):
-        return instance['data'].unpack_from(self._sig(self._size), offset.byte)[0]
+        size = self.__get__(instance)['size']
+        return instance['data'].unpack_from(self._sig(size), offset.byte)[0]
 
     def encode(self, data, offset, value):
-        instance['data'].pack_into(self._sig(self._size), offset.byte, value)
+        size = self.__get__(instance)['size']
+        instance['data'].pack_into(self._sig(size), offset.byte, value)
 
     def _sig(self, size):
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
-        sig = self._endianess + 'bhiq'[log2[size]]
+        sig = self._endianess + 'bhiq'[log2[size.byte]]
         return (sig if self._signed else sig.upper())
 
     class Meta:

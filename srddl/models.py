@@ -94,7 +94,7 @@ class Struct(metaclass=_MetaStruct):
             raise KeyError(item)
         return properties[item]()
 
-    def _setup(self):
+    def _setup(self, data):
         '''
         This function permits to map other structures to different part of
         file. When writing a structure, you may want to say that you can map

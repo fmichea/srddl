@@ -22,6 +22,7 @@ class ElfN_Addr(sf.IntField):
         return res
 
 class ElfN_Off(ElfN_Addr): pass
+class IntFieldN(ElfN_Addr): pass
 
 # Structures
 EI_INDENT = 16
@@ -95,6 +96,35 @@ class ElfN_Ehdr(sm.Struct):
     e_shentsize = sf.IntField('Section header entry size', size=sf.IntField.Size.INT16)
     e_shnum = sf.IntField('Number of entrues in section heade table', size=sf.IntField.Size.INT16)
     e_shstrndx = sf.IntField('Index of string table section header', size=sf.IntField.Size.INT16)
+
+    def _setup(self, data):
+        if self.e_phoff:
+            data.map_array(self.e_phoff, self.e_phnum, ElfN_Phdr)
+        if self.e_shoff:
+            data.map_array(self.e_shoff, self.e_shnum, ElfN_Shdr)
+
+
+class ElfN_Phdr(sm.Struct):
+    p_type = sf.IntField(size=sf.IntField.Size.INT32)
+    p_offset = ElfN_Off()
+    p_vaddr = ElfN_Addr()
+    p_paddr = ElfN_Addr()
+    p_filesz = IntFieldN()
+    p_memsz = IntFieldN()
+    p_align = IntFieldN()
+
+
+class ElfN_Shdr(sm.Struct):
+    sh_name = sf.IntField(size=sf.IntField.Size.INT32)
+    sh_type = sf.IntField(size=sf.IntField.Size.INT32)
+    sh_flags = IntFieldN()
+    sh_addr = ElfN_Addr()
+    sh_offset = ElfN_Off()
+    sh_size = IntFieldN()
+    sh_link = sf.IntField(size=sf.IntField.Size.INT32)
+    sh_info = sf.IntField(size=sf.IntField.Size.INT32)
+    sh_addralign = IntFieldN()
+    sh_entsize = IntFieldN()
 
 if __name__ == '__main__':
     prog = '/bin/ls' if len(sys.argv) == 1 else sys.argv[1]

@@ -3,6 +3,9 @@ import struct
 
 import srddl.core.helpers as sch
 
+from srddl.core.fields import BoundValue
+from srddl.core.offset import Offset
+
 class Data:
     def __init__(self, buf, ro=False):
         self.buf, self.ro, self._mapped = buf, ro, dict()
@@ -15,22 +18,21 @@ class Data:
         self.close()
 
     def mapped(self, offset, fltr=None):
-        if offset not in self._mapped:
-            raise Exception('fuuuu')
+        offset = self._real_offset(offset)
         res = [x for x in self._mapped[offset] if fltr is None or fltr(x)]
         if len(res) == 1:
             return res[0]
         raise Exception('fiiiiiiiiii')
 
     def map(self, offset, struct):
+        offset = self._real_offset(offset)
         s = struct(self, offset)
         self._mapped[offset] = self._mapped.get(offset, []) + [s]
-        s._setup()
+        s._setup(self)
         return s
 
     def map_array(self, offset, nb, struct):
-        if offset in self.mapped:
-            raise Exception('fuuuuu')
+        offset = self._real_offset(offset)
         for _ in range(nb):
             offset += self.map(offset, struct)['size']
 
@@ -44,6 +46,13 @@ class Data:
 
     def close(self):
         pass
+
+    def _real_offset(self, offset):
+        if isinstance(offset, BoundValue):
+            return Offset(byte=offset['value'])
+        elif not isinstance(offset, Offset):
+            return Offset(byte=offset)
+        return offset
 
 
 class FileData(Data):
