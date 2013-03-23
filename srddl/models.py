@@ -33,14 +33,20 @@ class _SrddlInternal:
 
     def map_struct(self):
         cur_offset = Offset()
-        for field_name, field in self.namespace.items():
+        for field_name in self.fields:
+            field = self.namespace[field_name]
             field.initialize(self.instance, self.offset + cur_offset)
             cur_offset += field.__get__(self.instance)['size']
         self._size = Size(cur_offset)
 
     @property
     def fields(self):
-        return list(self.namespace.keys())
+        lst = list(self.namespace.keys())
+        for key, new in self.instance._pre_mapping(self.data, lst):
+            if -1 < new < len(lst):
+                del lst[lst.index(key)]
+                lst.insert(new, key)
+        return lst
 
 
 class _MetaStruct(type):
@@ -100,7 +106,8 @@ class Struct(metaclass=_MetaStruct):
         properties = {
             'size': lambda: self._srddl._size,
             'offset': lambda: self._srddl.offset,
-            'data': lambda: self._srddl.data
+            'data': lambda: self._srddl.data,
+            'fields': lambda: self._srddl.fields,
         }
         if item not in properties:
             raise KeyError(item)
@@ -112,3 +119,20 @@ class Struct(metaclass=_MetaStruct):
         file. When writing a structure, you may want to say that you can map
         some data or other strutures.
         '''
+
+    def _pre_mapping(self, data, lst):
+        '''
+        This function must return a list of modifications done to the order of
+        the fields. This modifications will be done in their order. Here is an
+        example of the of how it works:
+
+         - Lets say we have the fields ['a', 'b', 'c', 'd'].
+         - If you return [('b', 0)], b will be moved to position 0, giving the
+           following list: ['b', 'a', 'c', 'd'].
+         - If you return [('b', 0), ('c', 3)], b will be moved to position 0,
+           and then c will be moved to position 1, giving the following list:
+           ['b', 'a', 'd', 'c'].
+
+        By default no modification is done.
+        '''
+        return []
