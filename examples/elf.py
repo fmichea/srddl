@@ -1,6 +1,8 @@
 # This file only is here to help me gather what I want to have as an API from
 # the point of view of the user (writer of a template).
 
+# All values were found in /usr/bin/elf.h of my GNU/Linux distribution.
+
 import sys
 import functools
 
@@ -105,19 +107,104 @@ class ElfN_Ehdr(sm.Struct):
 
 
 class ElfN_Phdr(sm.Struct):
-    p_type = sf.IntField(size=sf.IntField.Size.INT32)
+    p_type = sf.IntField(size=sf.IntField.Size.INT32, values=[
+        sf.Value(0, 'PT_NULL'),
+        sf.Value(1, 'PT_LOAD'),
+        sf.Value(2, 'PT_DYNAMIC'),
+        sf.Value(3, 'PT_INTERP'),
+        sf.Value(4, 'PT_NOTE'),
+        sf.Value(5, 'PT_SHLIB'),
+        sf.Value(6, 'PT_PHDR'),
+        sf.Value(7, 'PT_TLS'),
+        sf.Value(8, 'PT_NUM'),
+        sf.Value(0x60000000, 'PT_LOOS', 'Start of OS Specific'),
+        sf.Value(0x6474e550, 'PT_GNU_EH_FRAME'),
+        sf.Value(0x6474e551, 'PT_GNU_STACK'),
+        sf.Value(0x6474e552, 'PT_GNU_RELRO'),
+        sf.Value(0x6ffffffa, 'PT_LOSUNW,PT_SUNWBSS'),
+        sf.Value(0x6ffffffb, 'PT_SUNWSTACK'),
+        sf.Value(0x6fffffff, 'PT_HISUNW,PT_HIOS'),
+        sf.Value(0x70000000, 'PT_LOPROC'),
+        sf.Value(0x7fffffff, 'PT_HIPROC'),
+    ])
+
     p_offset = ElfN_Off()
     p_vaddr = ElfN_Addr()
     p_paddr = ElfN_Addr()
     p_filesz = IntFieldN()
     p_memsz = IntFieldN()
+    p_flags = sf.IntField(size=sf.IntField.Size.INT32, values=[
+        sf.Value(0x1, 'PF_X'),
+        sf.Value(0x2, 'PF_W'),
+        sf.Value(0x4, 'PF_R'),
+        sf.Value(0x0ff00000, 'PF_MASKOS'),
+        sf.Value(0xf0000000, 'PF_MASKPROC'),
+    ])
+
     p_align = IntFieldN()
+
+    def _pre_mapping(self, data, lst):
+        if data.mapped(0).e_indent.ei_class['name'] == 'ELFCLASS64':
+            return [('p_flags', 1)]
+        return []
 
 
 class ElfN_Shdr(sm.Struct):
     sh_name = sf.IntField(size=sf.IntField.Size.INT32)
-    sh_type = sf.IntField(size=sf.IntField.Size.INT32)
-    sh_flags = IntFieldN()
+
+    sh_type = sf.IntField(size=sf.IntField.Size.INT32, values=[
+        sf.Value(0, 'SHT_NULL'),
+        sf.Value(1, 'SHT_PROGBITS'),
+        sf.Value(2, 'SHT_SYMTAB'),
+        sf.Value(3, 'SHT_STRTAB'),
+        sf.Value(4, 'SHT_RELA'),
+        sf.Value(5, 'SHT_HASH'),
+        sf.Value(6, 'SHT_DYNAMIC'),
+        sf.Value(7, 'SHT_NOTE'),
+        sf.Value(8, 'SHT_NOBITS'),
+        sf.Value(9, 'SHT_REL'),
+        sf.Value(10, 'SHT_SHLIB'),
+        sf.Value(11, 'SHT_DYNSYM'),
+        sf.Value(14, 'SHT_INIT_ARRAY'),
+        sf.Value(15, 'SHT_FINI_ARRAY'),
+        sf.Value(16, 'SHT_PREINIT_ARRAY'),
+        sf.Value(17, 'SHT_GROUP'),
+        sf.Value(18, 'SHT_SYMTAB_SHNDX'),
+        sf.Value(19, 'SHT_NUM'),
+        sf.Value(0x60000000, 'SHT_LOOS'),
+        sf.Value(0x6ffffff5, 'SHT_GNU_ATTRIBUTES'),
+        sf.Value(0xfffffff6, 'SHT_GNU_HASH'),
+        sf.Value(0x6ffffff7, 'SHT_GNU_LIBLIST'),
+        sf.Value(0x6ffffff8, 'SHT_CHECKSUM'),
+        sf.Value(0x6ffffffa, 'SHT_LOSUNW,SHT_SUNW_move'),
+        sf.Value(0x6ffffffb, 'SHT_SUNW_COMDAT'),
+        sf.Value(0x6ffffffc, 'SHT_SUNW_syminfo'),
+        sf.Value(0x6ffffffd, 'SHT_GNU_verdef'),
+        sf.Value(0x6ffffffe, 'SHT_GNU_verneed'),
+        sf.Value(0x6fffffff, 'SHT_GNU_versym,SHT_HISUNW,SHT_HIOS'),
+        sf.Value(0x70000000, 'SHT_LOPROC'),
+        sf.Value(0x7fffffff, 'SHT_HIPROC'),
+        sf.Value(0x80000000, 'SHT_LOUSER'),
+        sf.Value(0x8fffffff, 'SHT_HIUSER'),
+    ])
+
+    sh_flags = IntFieldN(values=[
+        sf.Value(0x1, 'SHF_WRITE'),
+        sf.Value(0x2, 'SHF_ALLOC'),
+        sf.Value(0x4, 'SHF_EXECINSTR'),
+        sf.Value(0x8, 'SHF_MERGE'),
+        sf.Value(0x10, 'SHF_STRINGS'),
+        sf.Value(0x20, 'SHF_INFO_LINK'),
+        sf.Value(0x40, 'SHF_LINK_ORDER'),
+        sf.Value(0x80, 'SHF_OS_NONCONFORMING'),
+        sf.Value(0x100, 'SHF_GROUP'),
+        sf.Value(0x200, 'SHF_TLS'),
+        sf.Value(0x0ff00000, 'SHF_MASKOS'),
+        sf.Value(0xf0000000, 'SHF_MASKPROC'),
+        sf.Value(0x40000000, 'SHF_ORDERED'),
+        sf.Value(0x80000000, 'SHF_EXCLUDE'),
+    ])
+
     sh_addr = ElfN_Addr()
     sh_offset = ElfN_Off()
     sh_size = IntFieldN()
