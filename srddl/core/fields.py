@@ -179,6 +179,13 @@ class Value(FindMeAName):
 
     fields = ['value', 'name', 'description']
 
+    def __repr__(self):
+        res = '<Value at {:#x} with value {}'.format(id(self), self['value'])
+        if self['name'] is not None:
+            res += ' ({})'.format(self['name'])
+        res += '>'
+        return res
+
 
 @functools.total_ordering
 class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
