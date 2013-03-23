@@ -18,11 +18,9 @@ class _SrddlInternal:
     '''
 
     def __init__(self, instance, data, offset):
-        self.instance, self.data = instance, data
-        self.offset, self.cur_offset = Offset(offset), Offset()
+        self.instance, self.data, self.offset = instance, data, Offset(offset)
 
         # Some meta data on fields.
-        self.fields = list()
         self.fields_data = dict()
 
         # The namespace contains all the fields of the structure.
@@ -31,17 +29,18 @@ class _SrddlInternal:
     def add_namespace(self, namespace):
         for field_name, field in namespace.items():
             if isinstance(field, AbstractField):
-                self.fields.append(field_name)
                 self.namespace[field_name] = field
-                field.initialize(self.instance, self.offset + self.cur_offset)
-                self.cur_offset += field.__get__(self.instance)['size']
+
+    def map_struct(self):
+        cur_offset = Offset()
+        for field_name, field in self.namespace.items():
+            field.initialize(self.instance, self.offset + cur_offset)
+            cur_offset += field.__get__(self.instance)['size']
+        self._size = Size(cur_offset)
 
     @property
-    def _size(self):
-        res = Size()
-        for field_desc in self.namespace.values():
-            res += field_desc.__get__(self.instance)['size']
-        return res
+    def fields(self):
+        return list(self.namespace.keys())
 
 
 class _MetaStruct(type):
@@ -72,10 +71,15 @@ class _MetaStruct(type):
                 self._srddl.add_namespace(namespace)
         else:
             def init_wrapper(self, *args, **kwargs):
-                super(self.__class__, self).__init__(*args, **kwargs)
+                bases[0].__init__(self, *args, **kwargs)
                 self._srddl.add_namespace(namespace)
         kwds['__init__'] = init_wrapper
         return super().__new__(cls, name, bases, kwds)
+
+    def __call__(self, *args, **kwargs):
+        res = super().__call__(*args, **kwargs)
+        res._srddl.map_struct()
+        return res
 
 
 class Struct(metaclass=_MetaStruct):
