@@ -12,6 +12,11 @@ class _Offset:
         else:
             self.byte, self.bit = byte, bit
 
+    def __repr__(self):
+        return '<{} at {:#x} with value ({}, {})>'.format(
+            self.__class__.__name__, id(self), self.byte, self.bit
+        )
+
     def __hash__(self):
         return hash('{}::{}'.format(self.byte, self.bit))
 
