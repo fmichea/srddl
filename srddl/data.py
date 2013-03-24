@@ -42,7 +42,7 @@ class Data:
 
     def pack_into(self, frmt, offset, *args):
         if self.ro:
-            raise Exception('fu')
+            raise se.DataIsROError(self, offset)
         struct.pack_into(frmt, self.buf, offset, *args)
 
     def close(self):

@@ -116,3 +116,13 @@ class NoMappedDataError(Exception):
     def __str__(self):
         res = 'There is no struture mapped at offset {offset}.'
         return res.format(offset=self.offset)
+
+
+class DataIsROError(Exception):
+    def __init__(self, data, offset):
+        self.data, self.offset = data, offset
+
+    def __str__(self):
+        res = 'Data {data} is read-only, can\'t set its content at offset'
+        res += ' {offset}.'
+        return res.format(data=self.data, offset=self.offset)
