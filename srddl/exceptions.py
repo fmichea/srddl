@@ -45,7 +45,7 @@ class FieldNotReadyError(Exception):
 
     def __str__(self):
         res = 'The field {field} is not ready. You cannot read its value.'
-        return res.format(field=self.field)
+        return res.format(field=self.field.__class__.__name__)
 
 
 class InvalidReferenceError(Exception):
