@@ -106,3 +106,13 @@ class SignalHandlerCallError(Exception):
         res = 'Signal handler {func} call was not successful for signal '
         res += '"{signame}". Check backtrace.'
         return res.format(func=self.func, signame=self.signame)
+
+# ----- Data Exceptions --------------------------------------------------------
+
+class NoMappedDataError(Exception):
+    def __init__(self, offset):
+        self.offset = offset
+
+    def __str__(self):
+        res = 'There is no struture mapped at offset {offset}.'
+        return res.format(offset=self.offset)

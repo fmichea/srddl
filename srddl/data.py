@@ -2,6 +2,7 @@ import mmap
 import struct
 
 import srddl.core.helpers as sch
+import srddl.exceptions as se
 
 from srddl.core.fields import BoundValue
 from srddl.core.offset import Offset
@@ -22,7 +23,7 @@ class Data:
         res = [x for x in self._mapped[offset] if fltr is None or fltr(x)]
         if len(res) == 1:
             return res[0]
-        raise Exception('fiiiiiiiiii')
+        raise se.NoMappedDataError(offset)
 
     def map(self, offset, struct):
         offset = Offset(offset)
