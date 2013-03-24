@@ -99,3 +99,38 @@ class ArrayField(AbstractContainerField):
 
     class Meta:
         boundvalue_class = ArrayFieldBoundValue
+
+
+class UnionFieldBoundValue(BoundValue):
+    def __getattr__(self, attr_name):
+        if attr_name not in self._value:
+            raise AttributeError
+        return self._value[attr_name]
+
+    @property
+    def _size(self):
+        return self._value[list(self._value.keys())[0]]['size']
+
+
+class UnionField(AbstractContainerField):
+    def __init__(self, *args, **kwargs):
+        self.substructs, items = dict(), list(kwargs.items())
+        for name, struct in items:
+            if issubclass(struct, Struct):
+                self.substructs[name] = kwargs.pop(name)
+        if len(self.substructs) < 2:
+            raise Exception('not enough sub structures for UnionField.')
+        super().__init__(*args, **kwargs)
+
+    def decode(self, instance, offset):
+        res, size = dict(), None
+        for name, struct in self.substructs.items():
+            res[name] = struct(instance['data'], offset)
+            if size is None:
+                size = res[name]['size']
+            if res[name]['size'] != size:
+                raise Exception('Test.')
+        return res
+
+    class Meta:
+        boundvalue_class = UnionFieldBoundValue
