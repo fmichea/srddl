@@ -295,13 +295,12 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
     def _get_data(self, instance, name):
         key = self._data_key(name)
         if key not in instance._srddl.fields_data:
-            raise se.NoFieldDataError()
+            raise se.NoFieldDataError(instance, self, name)
         return instance._srddl.fields_data[key]
 
     def _set_data(self, instance, name, value):
         '''Sets the data associated with the field.'''
         instance._srddl.fields_data[self._data_key(name)] = value
-
 
     def _metaconf_value(self, key):
         try:

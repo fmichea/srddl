@@ -29,21 +29,14 @@ class ROContainerError(Exception):
 
 
 class NoFieldDataError(Exception):
-    def __str__(self):
-        res = 'The current field {name} tried to access to its data, though it'
-        res += ' has no data associated with it.'
-        return res.format(name='[unkown]')
-
-
-class FieldNotFoundError(Exception):
-    def __init__(self, instance, field, reason=None):
-        self.instance, self.field, self.reason = instance, field, reason
+    def __init__(self, struct, field, item):
+        self.struct, self.field, self.item = struct, field, item
 
     def __str__(self):
-        res = 'The field {field} was not found in instance {instance}.\n'
-        if self.reason is not None:
-            res += 'Reason: {reason}'
-        return res.format(instance=self.instance, field=self.field)
+        res = 'A field of type {field} in struct {struct} tried to access to'
+        res += ' its data "{item}", although it has no data with this name.'
+        return res.format(field=self.field.__class__.__name__, item=self.item,
+                          struct=self.struct.__class__.__name__)
 
 
 class FieldNotReadyError(Exception):
