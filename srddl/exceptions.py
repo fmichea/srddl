@@ -53,7 +53,7 @@ class InvalidReferenceError(Exception):
         self.ref, self.reason, self.kwds = ref, reason, kwds
 
     def __str__(self):
-        res = 'The value of subfield `{ref}` could\'t be retrieved.\n'
+        res = 'The value of field "{ref}" could\'t be retrieved.\n'
         res += 'Reason: {reason}'
         return res.format(ref=self.ref, reason=self.reason.format(**self.kwds))
 
