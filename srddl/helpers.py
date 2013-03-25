@@ -15,5 +15,5 @@ def valid(val):
 def equals(expected):
     '''Checks that the value matches the expected value.'''
     def _equals(value):
-        return value == bytearray(expected)
+        return value == expected
     return _equals
