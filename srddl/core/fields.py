@@ -8,6 +8,7 @@ import pprint
 
 import srddl.core.helpers as sch
 import srddl.exceptions as se
+import srddl.helpers as sh
 
 from srddl.core.signals import Signal
 from srddl.core.offset import Offset, Size
@@ -203,11 +204,11 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    fields = ['offset', 'size'] + Value.fields
+    fields = ['offset', 'size', 'valid'] + Value.fields
 
-    def __init__(self, instance, field, offset):
+    def __init__(self, instance, field, offset, valid):
         super().__init__(offset)
-        self._field, self._instance = field, instance
+        self._field, self._instance, self._valid_func = field, instance, valid
 
     def __repr__(self):
         res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
@@ -241,6 +242,10 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     def _value(self, value):
         pass
 
+    @property
+    def _valid(self):
+        return self._valid_func(self._value)
+
     def __bool__(self):
         return bool(self._value)
 
@@ -264,10 +269,15 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
         aligned = True
         boundvalue_class = BoundValue
 
+    def __init__(self, *args, **kwargs):
+        self._valid = kwargs.pop('valid', sh.valid)
+        super().__init__(*args, **kwargs)
+
     def initialize(self, instance, offset):
         if self._metaconf_value('aligned') and not offset.aligned():
             raise Exception('bit alignment not respected.')
-        bv = self._metaconf_value('boundvalue_class')(instance, self, offset)
+        args = [instance, self, offset, self._valid]
+        bv = self._metaconf_value('boundvalue_class')(*args)
         self._set_data(instance, 'boundvalue', bv)
         return bv['size']
 
