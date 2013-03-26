@@ -37,7 +37,7 @@ class _SrddlInternal:
             field = self.namespace[field_name]
             field.initialize(self.instance, self.offset + cur_offset)
             cur_offset += field.__get__(self.instance)['size']
-        self._size = Size(cur_offset)
+        self.size = Size(cur_offset)
 
     @property
     def fields(self):
@@ -103,15 +103,10 @@ class Struct(metaclass=_MetaStruct):
         return res
 
     def __getitem__(self, item):
-        properties = {
-            'size': lambda: self._srddl._size,
-            'offset': lambda: self._srddl.offset,
-            'data': lambda: self._srddl.data,
-            'fields': lambda: self._srddl.fields,
-        }
+        properties = ['offset', 'size', 'data', 'fields']
         if item not in properties:
             raise KeyError(item)
-        return properties[item]()
+        return getattr(self._srddl, item)
 
     def _setup(self, data):
         '''
