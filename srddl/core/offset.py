@@ -4,6 +4,7 @@
 
 import functools
 
+
 @functools.total_ordering
 class _Offset:
     def __init__(self, byte=0, bit=0):
@@ -49,9 +50,9 @@ class _Offset:
     def __sub__(self, other):
         if isinstance(other, _Offset):
             bit = self.bit - other.bit
-            byte = self.byte + other.byte
+            byte = self.byte - other.byte
             if bit < 0:
-                bit = 8 - bit
+                bit = 8 + bit
                 byte -= 1
             return self.__class__(byte=byte, bit=bit)
         return self.__class__(byte=(self.byte - other), bit=self.bit)
