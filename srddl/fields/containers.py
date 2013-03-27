@@ -6,9 +6,10 @@ import copy
 
 from itertools import islice
 
+import srddl.core.helpers as sch
 import srddl.exceptions as se
 
-from srddl.core.fields import AbstractField, BoundValue, reference_value
+from srddl.core.fields import AbstractField, BoundValue
 from srddl.core.offset import Size
 from srddl.models import Struct
 
@@ -89,7 +90,7 @@ class ArrayField(AbstractContainerField):
         super().__init__(*args, **kwargs)
 
     def decode(self, instance, offset):
-        data, dim = [], reference_value(instance, self._dim)
+        data, dim = [], sch.reference_value(instance, self._dim)
         for _ in range(dim):
             desc = copy.copy(self._desc)
             desc.initialize(instance, offset)

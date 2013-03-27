@@ -6,7 +6,7 @@ import srddl.exceptions as se
 import srddl.core.helpers as sch
 
 from srddl.core.offset import Size
-from srddl.core.fields import AbstractField, BoundValue, Value, reference_value
+from srddl.core.fields import AbstractField, BoundValue, Value
 
 
 class IntFieldBoundValue(BoundValue):
@@ -69,7 +69,7 @@ class ByteArrayField(AbstractField):
 class BitFieldBoundValue(IntFieldBoundValue):
     @property
     def _size(self):
-        size = Size(bit=reference_value(self._instance, self._field._size))
+        size = Size(bit=sch.reference_value(self._instance, self._field._size))
         if not (0 < size.bit < 8):
             return ValueError('not a good size.')
         return size
