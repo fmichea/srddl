@@ -257,7 +257,7 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
         boundvalue_class = BoundValue
 
     def __init__(self, *args, **kwargs):
-        self._valid = kwargs.pop('valid', sh.valid)
+        self._valid = kwargs.pop('valid', lambda _: None)
         super().__init__(*args, **kwargs)
 
     def initialize(self, instance, offset):
