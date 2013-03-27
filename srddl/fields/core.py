@@ -120,3 +120,12 @@ class BitMaskField(IntField):
         if mask != nb:
             res.append(nb ^ mask)
         return (res if res else nb)
+
+    def _display_value(self, vals):
+        res = []
+        for val in vals:
+            if isinstance(val, Value):
+                res.append(val['display_value'])
+            else:
+                res.append(val)
+        return ' | '.join(res)

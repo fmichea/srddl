@@ -7,13 +7,14 @@ import sys
 import functools
 
 import srddl.data as sd
+import srddl.exceptions as se
 import srddl.fields as sf
 import srddl.helpers as sh
 import srddl.models as sm
 
 
 # Atomic types.
-class ElfN_Addr(sf.IntField):
+class IntFieldN(sf.IntField):
     @functools.lru_cache()
     def _size(self, struct):
         try:
@@ -23,15 +24,18 @@ class ElfN_Addr(sf.IntField):
         res = header.e_indent.ei_class['value'] * 4
         return res
 
-class ElfN_Off(ElfN_Addr): pass
-class IntFieldN(ElfN_Addr): pass
+class ElfN_Off(IntFieldN):
+    def _display_value(self, val):
+        return '{:#x}'.format(val)
+
+class ElfN_Addr(ElfN_Off): pass
 
 class BitMaskFieldN(sf.BitMaskField):
     @functools.lru_cache()
     def _size(self, struct):
         try:
             header = struct['data'].mapped(0)
-        except:
+        except se.NoMappedDataError:
             header = struct
         res = header.e_indent.ei_class['value'] * 4
         return res

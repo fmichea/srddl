@@ -151,12 +151,18 @@ class Value(FindMeAName):
     '''
 
     fields = ['value', 'name', 'description']
+    ro_fields = ['display_value']
 
     def __repr__(self):
-        res = '<Value at {:#x} with value {}'.format(id(self), self['value'])
+        return '<Value at {:#x} with value {}>'.format(
+            id(self), self['display_value']
+        )
+
+    @property
+    def _display_value(self):
+        res = str(self['value'])
         if self['name'] is not None:
             res += ' ({})'.format(self['name'])
-        res += '>'
         return res
 
 
@@ -176,7 +182,8 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    fields = ['offset', 'size', 'valid'] + Value.fields
+    fields = ['offset'] + Value.fields
+    ro_fields = ['size', 'value'] + Value.ro_fields
 
     def __init__(self, instance, field, offset, valid):
         super().__init__(offset)
@@ -184,11 +191,9 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
 
     def __repr__(self):
         res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
-        if self['value'] is not None:
-            value = repr(self['value']).replace('\n', '\n    ')
+        value = self['display_value']
+        if value is not None:
             res += ' with value {}'.format(value)
-            if self['name'] is not None:
-                res += ' ({})'.format(self['name'])
         res += '>'
         return res
 
@@ -217,6 +222,16 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     @property
     def _valid(self):
         return self._valid_func(self._value)
+
+    @property
+    def _display_value(self):
+        res = self._field._display_value(self._value)
+        if res is None and self['value'] is not None:
+            if self['name'] is not None:
+                res = super()._display_value
+            else:
+                res = repr(self['value']).replace('\n', '\n    ')
+        return res
 
     def __bool__(self):
         return bool(self._value)
@@ -289,3 +304,6 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
             return getattr(getattr(self, 'Meta'), key)
         except AttributeError:
             return getattr(self.__class__._MetaBase, key)
+
+    def _display_value(self, val):
+        return None
