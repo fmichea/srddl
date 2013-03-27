@@ -109,6 +109,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
 
 class FindMeAName:
     fields = []
+    ro_fields = []
 
     def __init__(self, *args, **kwargs):
         '''
@@ -125,9 +126,12 @@ class FindMeAName:
 
     def __getitem__(self, attr_name):
         '''This function permits to access the attributes of the object.'''
-        if attr_name not in self.__class__.fields:
-            raise AttributeError
-        return getattr(self, '_{}'.format(attr_name), None)
+        if attr_name not in self.__class__.fields + self.__class__.ro_fields:
+            raise KeyError
+        try:
+            return getattr(self, '_{}'.format(attr_name), None)
+        except AttributeError:
+            raise KeyError
 
     def copy(self, other):
         for field in type(other).fields:
