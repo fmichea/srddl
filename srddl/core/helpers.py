@@ -1,6 +1,8 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
+import inspect
+
 def enum(**enums):
     if 'values' in enums:
         raise ValueError('Can\'t create enum with "values" value name. Sorry.')
@@ -12,6 +14,7 @@ def enum(**enums):
 
 
 def reference_value(instance, ref, type_=int):
+    from srddl.core.fields import AbstractField, BoundValue
     '''
     This function permits to retrieve the value of a Field, a lambda or a
     BoundValue until it is valid with ``type`` (``int`` by default). If it is
