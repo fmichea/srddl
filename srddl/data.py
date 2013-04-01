@@ -1,3 +1,4 @@
+import collections
 import mmap
 import os
 import struct
@@ -51,6 +52,16 @@ class Data:
 
     def close(self):
         pass
+
+    def view(self, line, lines):
+        column = 16
+        if line % column != 0:
+            Exception('Wrong!')
+        data = self.unpack_from('{}B'.format(column * lines), column * line)
+        return collections.OrderedDict(zip(
+            ((line + it) * column for it in range(lines)),
+            zip(*([iter(data)] * column))
+        ))
 
 
 class FileData(Data):
