@@ -1,4 +1,5 @@
 import mmap
+import os
 import struct
 
 import srddl.core.helpers as sch
@@ -17,6 +18,9 @@ class Data:
 
     def __del__(self):
         self.close()
+
+    def __len__(self):
+        return len(self.buf)
 
     def mapped(self, offset, fltr=None):
         offset = Offset(offset)
@@ -56,8 +60,11 @@ class FileData(Data):
     )
 
     def __init__(self, filename, mode=Mode.RDONLY):
-        self.f = open(filename, mode[0])
+        self.f, self.filename = open(filename, mode[0]), filename
         super().__init__(mmap.mmap(self.f.fileno(), 0, prot=mode[1]))
+
+    def __len__(self):
+        return os.path.getsize(self.filename)
 
     def close(self):
         self.buf.close()
