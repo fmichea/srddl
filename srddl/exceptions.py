@@ -77,6 +77,26 @@ class BifFieldSizeError(Exception):
             size = self.size
         )
 
+class FieldFactoryUsageError(Exception):
+    def __init__(self, struct, field):
+        self.struct, self.field = struct, field
+
+    def __str__(self):
+        res = 'You can\'t use the factory as a standard field.\n It must only'
+        res += ' be used to overload pre_initialize function.\n'
+        res += '    struct: {strct}\n'
+        res += '    field: {fld}'
+        return res.format(strct = self.struct, fld = self.field)
+
+class SwitchFieldError(Exception):
+    def __init__(self, field, val):
+        self.field, self.val = field, val
+
+    def __str__(self):
+        res = 'There is no mapping associated with the value {val} for switch '
+        res += 'field {swtch_fld}.'
+        return res.format(val = self.val, swtch_fld = self.field)
+
 
 # ----- Struct Exceptions ------------------------------------------------------
 

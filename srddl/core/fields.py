@@ -260,6 +260,9 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
         self._valid = kwargs.pop('valid', lambda _: None)
         super().__init__(*args, **kwargs)
 
+    def pre_initialize(self, instance):
+        return None
+
     def initialize(self, instance, offset):
         if self._metaconf_value('aligned') and not offset.aligned():
             raise Exception('bit alignment not respected.')

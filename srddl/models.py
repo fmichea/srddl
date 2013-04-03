@@ -35,6 +35,11 @@ class _SrddlInternal:
         cur_offset = Offset()
         for field_name in self.fields:
             field = self.namespace[field_name]
+            while True:
+                field_pi = field.pre_initialize(self.instance)
+                if field_pi is None:
+                    break
+                field, self.namespace[field_name] = field_pi, field_pi
             field.initialize(self.instance, self.offset + cur_offset)
             cur_offset += field.__get__(self.instance)['size']
         self.size = Size(cur_offset)
@@ -131,3 +136,16 @@ class Struct(metaclass=_MetaStruct):
         By default no modification is done.
         '''
         return []
+
+    def __getattribute__(self, name):
+        # Infinite depth recursion fix.
+        if name in ['_srddl']:
+            return super().__getattribute__(name)
+        if name in self._srddl.namespace:
+            return self._srddl.namespace[name].__get__(self)
+        return super().__getattribute__(name)
+
+    def __setattribute__(self, name, value):
+        if name in self._srddl.namespace:
+            return self._srddl.namespace[name].__set__(self, value)
+        return super().__setattribute__(name, value)
