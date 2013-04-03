@@ -2,19 +2,18 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
-import srddl.exceptions as se
+import srddl.core.fields as scf
 import srddl.core.helpers as sch
+import srddl.core.offset as sco
+import srddl.exceptions as se
 
-from srddl.core.offset import Size
-from srddl.core.fields import AbstractField, BoundValue, Value
 
-
-class IntFieldBoundValue(BoundValue):
+class IntFieldBoundValue(scf.BoundValue):
     def __index__(self):
         return self._value
 
 
-class IntField(AbstractField):
+class IntField(scf.AbstractField):
     Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
     Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
 
@@ -48,7 +47,7 @@ class IntField(AbstractField):
         return (sig if self._signed else sig.upper())
 
 
-class ByteArrayField(AbstractField):
+class ByteArrayField(scf.AbstractField):
     def __init__(self, size, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._size = size
@@ -69,13 +68,13 @@ class ByteArrayField(AbstractField):
 class BitFieldBoundValue(IntFieldBoundValue):
     @property
     def _size(self):
-        size = Size(bit=sch.reference_value(self._instance, self._field._size))
-        if not (0 < size.bit < 8):
-            return ValueError('not a good size.')
-        return size
+        size = sch.reference_value(self._instance, self._field._size)
+        if not (0 < size < 8):
+            return se.BifFieldSizeError(size)
+        return sco.Size(bit=size)
 
 
-class BitField(AbstractField):
+class BitField(scf.AbstractField):
     class Meta:
         aligned = False
         boundvalue_class = BitFieldBoundValue

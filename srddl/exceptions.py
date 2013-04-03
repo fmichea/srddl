@@ -66,6 +66,17 @@ class NotABoundValueError(Exception):
         res = 'The value returned by {field} was not a BoundValue.'
         return res.format(field=self.field)
 
+# ----- Fields Exceptions ------------------------------------------------------
+
+class BifFieldSizeError(Exception):
+    def __init__(self, size):
+        self.size = size
+
+    def __str__(self):
+        return 'The size {size} is not suitable for a BitField.'.format(
+            size = self.size
+        )
+
 
 # ----- Struct Exceptions ------------------------------------------------------
 
@@ -118,6 +129,7 @@ class SignalHandlerCallError(Exception):
         res = 'Signal handler {func} call was not successful for signal '
         res += '"{signame}". Check backtrace.'
         return res.format(func=self.func, signame=self.signame)
+
 
 # ----- Data Exceptions --------------------------------------------------------
 

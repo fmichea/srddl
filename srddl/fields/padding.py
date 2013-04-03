@@ -2,11 +2,10 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
+import srddl.core.fields as scf
 import srddl.core.helpers as sch
 
-from srddl.core.fields import AbstractField, BoundValue
-
-class PaddingBoundValue(BoundValue):
+class PaddingBoundValue(scf.BoundValue):
     @property
     def _size(self):
         if self._field._mode == PaddingField.Mode.TAKE:
@@ -16,7 +15,7 @@ class PaddingBoundValue(BoundValue):
             return res if 0 <= res else 0
         return None
 
-class PaddingField(AbstractField):
+class PaddingField(scf.AbstractField):
     Mode = sch.enum(TAKE=0, FILL=1)
 
     def __init__(self, size, **kwargs):

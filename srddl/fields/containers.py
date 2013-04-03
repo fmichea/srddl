@@ -6,20 +6,19 @@ import copy
 
 from itertools import islice
 
+import srddl.core.fields as scf
 import srddl.core.helpers as sch
+import srddl.core.offset as sco
 import srddl.exceptions as se
-
-from srddl.core.fields import AbstractField, BoundValue
-from srddl.core.offset import Size
-from srddl.models import Struct
+import srddl.models as sm
 
 
-class AbstractContainerField(AbstractField):
+class AbstractContainerField(scf.AbstractField):
     def encode(self, data, offset, size):
         raise se.ROContainerError()
 
 
-class SuperFieldBoundValue(BoundValue):
+class SuperFieldBoundValue(scf.BoundValue):
     def __getattr__(self, attr_name):
         return getattr(self.__getitem__('value'), attr_name)
 
@@ -35,7 +34,7 @@ class SuperField(AbstractContainerField):
     '''
 
     def __init__(self, cls, *args, **kwargs):
-        if not issubclass(cls, Struct):
+        if not issubclass(cls, sm.Struct):
             raise se.SuperFieldError()
         self._cls = cls
         super().__init__(*args, **kwargs)
@@ -47,7 +46,7 @@ class SuperField(AbstractContainerField):
         boundvalue_class = SuperFieldBoundValue
 
 
-class ArrayFieldBoundValue(BoundValue):
+class ArrayFieldBoundValue(scf.BoundValue):
     def __len__(self):
         return len(self._value)
 
@@ -76,7 +75,7 @@ class ArrayFieldBoundValue(BoundValue):
 
     @property
     def _size(self):
-        res = Size()
+        res = sco.Size()
         for it in self._value:
             res += it.__get__(self._instance)['size']
         return res
@@ -85,7 +84,7 @@ class ArrayFieldBoundValue(BoundValue):
 class ArrayField(AbstractContainerField):
     def __init__(self, dim, desc, *args, **kwargs):
         self._dim, self._desc = dim, desc
-        if not isinstance(desc, AbstractField):
+        if not isinstance(desc, scf.AbstractField):
             raise se.ArrayError()
         super().__init__(*args, **kwargs)
 
@@ -102,7 +101,7 @@ class ArrayField(AbstractContainerField):
         boundvalue_class = ArrayFieldBoundValue
 
 
-class UnionFieldBoundValue(BoundValue):
+class UnionFieldBoundValue(scf.BoundValue):
     def __getattr__(self, attr_name):
         if attr_name not in self._value:
             raise AttributeError
