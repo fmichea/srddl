@@ -8,6 +8,17 @@ import srddl.core.offset as sco
 import srddl.exceptions as se
 
 
+class AbstractField(scf.AbstractField):
+    def initialize(self, instance, offset):
+        raise se.AbstractStructError(instance)
+
+    def decode(self, instance, offset):
+        raise se.AbstractStructError(instance)
+
+    def encode(self, instance, offset, value):
+        raise se.AbstractStructError(instance)
+
+
 class IntFieldBoundValue(scf.BoundValue):
     def __index__(self):
         return self._value

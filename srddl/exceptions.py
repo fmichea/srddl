@@ -80,6 +80,16 @@ class BifFieldSizeError(Exception):
 
 # ----- Struct Exceptions ------------------------------------------------------
 
+class AbstractStructError(Exception):
+    def __init__(self, struct):
+        self.struct = struct
+
+    def __str__(self):
+        res = 'The struct {strct_nm} still contains at least an AbstractField.\n'
+        res += 'It can\'t be mapped on any data.'
+        return res.format(strct_nm = self.struct.__class__.__name__)
+
+
 class NotOnDataError(Exception):
     def __init__(self, struct):
         self.struct = struct
