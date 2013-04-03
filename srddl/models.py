@@ -91,7 +91,7 @@ class _MetaStruct(type):
 class Struct(metaclass=_MetaStruct):
     def __init__(self, data, offset):
         if not isinstance(data, sd.Data):
-            raise Exception('fuu')
+            raise se.NotOnDataError(self)
         self._srddl = _SrddlInternal(self, data, offset)
 
     def __repr__(self):

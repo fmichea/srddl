@@ -67,6 +67,18 @@ class NotABoundValueError(Exception):
         return res.format(field=self.field)
 
 
+# ----- Struct Exceptions ------------------------------------------------------
+
+class NotOnDataError(Exception):
+    def __init__(self, struct):
+        self.struct = struct
+
+    def __str__(self):
+        return 'Struct {struct_name} was called on a non-data instance.'.format(
+            struct_name = self.struct.__class__.__name__,
+        )
+
+
 # ----- Signal Exceptions ------------------------------------------------------
 
 class SignalExistsError(Exception):
