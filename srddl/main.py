@@ -7,6 +7,8 @@ import pdb
 import sys
 import traceback
 
+import srddl.core.frontend_loader
+
 
 def main():
     parser = argparse.ArgumentParser(description='Templated hexadecimal editor.')
@@ -17,10 +19,12 @@ def main():
     dgroup.add_argument('-P', '--pdb', action='store_true', default=False,
                         help='start pdb debugger on exception.')
 
+    srddl.core.frontend_loader.load_frontends(parser.add_subparsers())
+
     args = parser.parse_args(sys.argv[1:])
     if hasattr(args, 'func'):
         try:
-            args.func(sys.argv, args)
+            args.func(args)
         except Exception as err:
             if args.backtrace or args.pdb:
                 traceback.print_exc()
