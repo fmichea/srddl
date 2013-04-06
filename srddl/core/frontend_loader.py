@@ -8,10 +8,10 @@ import inspect
 import os
 import sys
 
-import srddl.core.exceptions as sce
+import srddl.core.helpers as sch
 
 
-class Frontend(metaclass=abc.ABCMeta):
+class Frontend(sch.MetaConf, metaclass=abc.ABCMeta):
     class MetaBase:
         enabled = True
         default_args = True
@@ -21,30 +21,22 @@ class Frontend(metaclass=abc.ABCMeta):
         self.parser = None
 
     def frontend_init(self, subparser):
-        if not self._metaconf('enabled'):
+        if not self.metaconf('enabled'):
             return
-        kwds = dict((it, self._metaconf(it)) for it in ['help', 'description'])
+        kwds = dict((it, self.metaconf(it)) for it in ['help', 'description'])
 
         # Argument subparser.
-        self.parser = subparser.add_parser(self._metaconf('name'), **kwds)
+        self.parser = subparser.add_parser(self.metaconf('name'), **kwds)
         self.parser.set_defaults(func=self.process)
 
         # Default arguments available in all frontends, unless default_args is
         # set to False.
-        if self._metaconf('default_args'):
+        if self.metaconf('default_args'):
             self.parser.add_argument('-T', '--type', action='store', metavar='T',
                                      help='type of file to use.')
 
         # Initialization,
         self.init()
-
-    def _metaconf(self, name):
-        for meta in ['Meta', 'MetaBase']:
-            try:
-                return getattr(getattr(self.__class__, meta), name)
-            except AttributeError:
-                pass
-        raise sce.FrontEndConfigurationError(instance.__class__, name)
 
     def init(self):
         '''Use this method to add arguments to the parser.'''

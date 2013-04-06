@@ -3,6 +3,8 @@
 
 import inspect
 
+import srddl.core.exceptions as sce
+
 def enum(**enums):
     if 'values' in enums:
         raise ValueError('Can\'t create enum with "values" value name. Sorry.')
@@ -45,3 +47,50 @@ def reference_value(instance, ref, type_=int):
         reason = 'invalid reference type {type_}, see documentation.'
         raise se.InvalidReferenceError(reason, type_=type(ref))
     return inner(ref)
+
+
+class MetaConf:
+    class MetaBase:
+        pass
+
+    @classmethod
+    def metaconf(cls, key):
+        for meta in ['Meta', 'MetaBase']:
+            try:
+                return getattr(getattr(cls, meta), key)
+            except AttributeError:
+                pass
+        raise sce.NoMetaConfError(cls, key)
+
+
+class NamedDict(MetaConf):
+    class MetaBase:
+        fields = []
+        ro_fields = []
+
+    def __init__(self, *args, **kwargs):
+        '''
+        Init function of this class has a specific behavior. Positional
+        arguments are are in the order of the ``fields`` list. Then you can
+        override specific values with keyword arguments.
+        '''
+        vals = dict(zip(self.metaconf('fields'), args))
+        vals.update(kwargs)
+        for name in self.metaconf('fields'):
+            if name not in vals:
+                continue
+            setattr(self, '_{}'.format(name), vals.get(name, None))
+
+    def __getitem__(self, attr_name):
+        '''This function permits to access the attributes of the object.'''
+        lst = self.metaconf('fields') + self.metaconf('ro_fields')
+        if attr_name not in lst:
+            raise KeyError
+        try:
+            return getattr(self, '_{}'.format(attr_name), None)
+        except AttributeError:
+            raise KeyError
+
+    def copy(self, other):
+        for field in type(other).fields:
+            setattr(self, '_{}'.format(field), other[field])

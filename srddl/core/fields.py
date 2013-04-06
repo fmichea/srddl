@@ -107,38 +107,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         return super().__new__(cls, clsname, bases, kwds)
 
 
-class FindMeAName:
-    fields = []
-    ro_fields = []
-
-    def __init__(self, *args, **kwargs):
-        '''
-        Init function of this class has a specific behavior. Positional
-        arguments are are in the order of the ``fields`` list. Then you can
-        override specific values with keyword arguments.
-        '''
-        vals = dict(zip(self.__class__.fields, args))
-        vals.update(kwargs)
-        for name in self.__class__.fields:
-            if name not in vals:
-                continue
-            setattr(self, '_{}'.format(name), vals.get(name, None))
-
-    def __getitem__(self, attr_name):
-        '''This function permits to access the attributes of the object.'''
-        if attr_name not in self.__class__.fields + self.__class__.ro_fields:
-            raise KeyError
-        try:
-            return getattr(self, '_{}'.format(attr_name), None)
-        except AttributeError:
-            raise KeyError
-
-    def copy(self, other):
-        for field in type(other).fields:
-            setattr(self, '_{}'.format(field), other[field])
-
-
-class Value(FindMeAName):
+class Value(sch.NamedDict):
     '''
     The Value class is used by the ``values`` keyword parameter of certain
     fields. It is used to define documentation on values possible. The usage
@@ -150,8 +119,9 @@ class Value(FindMeAName):
         - description
     '''
 
-    fields = ['value', 'name', 'description']
-    ro_fields = ['display_value']
+    class Meta:
+        fields = ['value', 'name', 'description']
+        ro_fields = ['display_value']
 
     def __repr__(self):
         return '<Value at {:#x} with value {}>'.format(
@@ -182,8 +152,9 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    fields = ['offset'] + Value.fields
-    ro_fields = ['size', 'value'] + Value.ro_fields
+    class Meta:
+        fields = ['offset'] + Value.Meta.fields
+        ro_fields = ['size', 'value'] + Value.Meta.ro_fields
 
     def __init__(self, instance, field, offset, valid):
         super().__init__(offset)
@@ -198,7 +169,7 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
         return res
 
     def __getitem__(self, item):
-        if item != 'value' and item in Value.fields:
+        if item != 'value' and item in Value.metaconf('fields'):
             # Force decoding of value for those fields.
             _ = self._value
         return super().__getitem__(item)
@@ -249,10 +220,11 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
         return self.value < other
 
 
-class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
-    fields = ['description']
+class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
+    class Meta:
+        fields = ['description']
 
-    class _MetaBase:
+    class MetaBase(sch.NamedDict.MetaBase):
         aligned = True
         boundvalue_class = BoundValue
 
@@ -264,10 +236,10 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
         return None
 
     def initialize(self, instance, offset):
-        if self._metaconf_value('aligned') and not offset.aligned():
+        if self.metaconf('aligned') and not offset.aligned():
             raise Exception('bit alignment not respected.')
         args = [instance, self, offset, self._valid]
-        bv = self._metaconf_value('boundvalue_class')(*args)
+        bv = self.metaconf('boundvalue_class')(*args)
         self._set_data(instance, 'boundvalue', bv)
         return bv['size']
 
@@ -301,12 +273,6 @@ class AbstractField(FindMeAName, metaclass=_MetaAbstractField):
     def _set_data(self, instance, name, value):
         '''Sets the data associated with the field.'''
         instance._srddl.fields_data[self._data_key(name)] = value
-
-    def _metaconf_value(self, key):
-        try:
-            return getattr(getattr(self, 'Meta'), key)
-        except AttributeError:
-            return getattr(self.__class__._MetaBase, key)
 
     def _display_value(self, val):
         return None
