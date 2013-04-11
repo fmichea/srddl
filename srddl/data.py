@@ -12,6 +12,7 @@ from srddl.core.offset import Offset
 class Data:
     def __init__(self, buf, ro=False):
         self.buf, self.ro, self._mapped = buf, ro, dict()
+        self.view = DataView(self)
 
         # Probably not foolproof...
         try: self.buf[0] = self.buf[0]
@@ -53,15 +54,76 @@ class Data:
     def close(self):
         pass
 
-    def view(self, line, lines):
-        column = 16
-        if line % column != 0:
-            Exception('Wrong!')
-        data = self.unpack_from('{}B'.format(column * lines), column * line)
+
+class DataView:
+    PAGE_SIZE = 16
+    COLUMN_SIZE = 16
+
+    def __init__(self, data):
+        self._data, self._offset, self._sline = data, 0, 0
+
+    def __call__(self, lines):
+        # Move _sline arround if needed.
+        if self._sline is None:
+            self._sline = self.line - lines // 2
+            self._sline = max(0, min(self._sline, self.line - lines))
+        elif self.line < self._sline:
+            self._sline = self.line
+        elif self._sline + lines <= self.line:
+            self._sline = self.line - lines + 1
+
+        # Fetch data and return it.
+        column = DataView.COLUMN_SIZE
+        offset = self._sline * column
+        size = min(lines * column, len(self._data) - offset)
+        data = self._data.unpack_from('{}B'.format(size), offset)
         return collections.OrderedDict(zip(
-            ((line + it) * column for it in range(lines)),
+            (offset + it * column for it in range(lines)),
             zip(*([iter(data)] * column))
         ))
+
+    def _offset_setter(self, value):
+        self._offset = max(min(len(self._data), value), 0)
+    offset = property(fset=_offset_setter)
+
+    @property
+    def line(self):
+        return self._offset // DataView.COLUMN_SIZE
+
+    @property
+    def column(self):
+        return self._offset % DataView.COLUMN_SIZE
+
+    def up(self):
+        if self._offset < DataView.COLUMN_SIZE:
+            return
+        self._offset -= DataView.COLUMN_SIZE
+
+    def right(self):
+        if self._offset == len(self._data) - 1:
+            return
+        self._offset += 1
+
+    def left(self):
+        if self._offset == 0:
+            return
+        self._offset -= 1
+
+    def down(self):
+        l = len(self._data)
+        if l - l % DataView.COLUMN_SIZE < self._offset:
+            return
+        self._offset += DataView.COLUMN_SIZE
+        if l <= self._offset:
+            self._offset = l - 1
+
+    def pageup(self):
+        for _ in range(DataView.PAGE_SIZE):
+            self.up()
+
+    def pagedown(self):
+        for _ in range(DataView.PAGE_SIZE):
+            self.down()
 
 
 class FileData(Data):
