@@ -94,3 +94,30 @@ class NamedDict(MetaConf):
     def copy(self, other):
         for field in type(other).fields:
             setattr(self, '_{}'.format(field), other[field])
+
+
+class NamedRecord(MetaConf):
+    class MetaBase:
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        vals = dict(zip(self.metaconf('fields'), args))
+        vals.update(kwargs)
+        for name in self.metaconf('fields'):
+            if name not in vals:
+                continue
+            setattr(self, '_{}'.format(name), vals.get(name, None))
+
+    def __getattr__(self, attr_name):
+        if attr_name in self.metaconf('fields'):
+            return getattr(self, '_{}'.format(attr_name), None)
+        raise AttributeError(attr_name)
+
+    def __setattr__(self, attr_name, value):
+        if attr_name in self.metaconf('fields'):
+            return setattr(self, '_{}'.format(attr_name), value)
+        return super().__setattr__(attr_name, value)
+
+    def copy(self, other):
+        for field in other.metaconf('fields'):
+            setattr(self, '_{}'.format(field), getattr(other, field))
