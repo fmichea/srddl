@@ -82,9 +82,13 @@ class DataView:
             zip(*([iter(data)] * column))
         ))
 
-    def _offset_setter(self, value):
+    @property
+    def offset(self):
+        return self._offset
+
+    @offset.setter
+    def offset(self, value):
         self._offset = max(min(len(self._data), value), 0)
-    offset = property(fset=_offset_setter)
 
     @property
     def line(self):

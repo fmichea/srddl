@@ -145,6 +145,10 @@ class CursesStatusBar(CursesWindow):
 _CHARS = string.ascii_letters + string.digits + string.punctuation
 
 class CursesHexWindow(CursesWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.nibble = 0
+
     def redraw(self):
         line, len_addr = 1, len(hex(len(self.mw.data)))
         for off, data in self.mw.data.view(self.height - 2).items():
@@ -155,7 +159,10 @@ class CursesHexWindow(CursesWindow):
                     res, view = '{:02x}'.format(x), self.mw.data.view
                     if (view.line == off // sd.DataView.COLUMN_SIZE and
                         view.column == column):
-                        res, cursor_byte = 'XX', res
+                        if self.nibble == 0:
+                            res, cursor_byte = 'X{}'.format(res[1]), res[0]
+                        else:
+                            res, cursor_byte = '{}X'.format(res[0]), res[1]
                     column += 1
                     return res
                 blocks.append(' '.join(byte_display(x) for x in it))
@@ -168,7 +175,7 @@ class CursesHexWindow(CursesWindow):
             )
             self.window.addstr(line, 1, res)
             if cursor_byte is not None:
-                self.window.addstr(line, res.index('XX') + 1, cursor_byte,
+                self.window.addstr(line, res.index('X') + 1, cursor_byte,
                                    curses.A_REVERSE)
             line += 1
         super().redraw()
@@ -233,14 +240,22 @@ class CursesMainWindow:
             self.data.view.up()
             self.redraw_windows(['hexdump'])
         def right():
-            self.data.view.right()
-            self.redraw_windows(['hexdump'])
+            win = self.window('hexdump')
+            if not (self.data.view.offset == len(self.data) - 1 and win.nibble):
+                win.nibble = 1 - win.nibble
+                if win.nibble == 0:
+                    self.data.view.right()
+                self.redraw_windows(['hexdump'])
         def down():
             self.data.view.down()
             self.redraw_windows(['hexdump'])
         def left():
-            self.data.view.left()
-            self.redraw_windows(['hexdump'])
+            win = self.window('hexdump')
+            if not (self.data.view.offset == 0 and win.nibble == 0):
+                win.nibble = 1 - win.nibble
+                if win.nibble == 1:
+                    self.data.view.left()
+                self.redraw_windows(['hexdump'])
         def ppage():
             self.data.view.pageup()
             self.redraw_windows(['hexdump'])
