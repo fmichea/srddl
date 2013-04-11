@@ -112,7 +112,6 @@ class CursesStatusBar(CursesWindow):
         if not self._displayed:
             return
         while self.msgs[-1][1] != 0 and self.msgs[-1][1] < time.time():
-            _write('comment?\n')
             self.msgs.pop()
         self.window.addstr(0, 1, self.msgs[-1][0])
         self.window.clrtobot()
