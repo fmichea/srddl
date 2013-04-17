@@ -49,84 +49,82 @@ def _urwid_to_verbose(key):
         key = key.replace(uverb, verb)
     return key
 
-class StatusBar(urwid.AttrMap):
-    def __init__(self, mw):
-        self.wtext = urwid.Text('')
-        super().__init__(self.wtext, 'footer')
-        self.msgs, self.mw = [], mw
-        self.add_text('Welcome!')
+if CURSES_ON:
+    class StatusBar(urwid.AttrMap):
+        def __init__(self, mw):
+            self.wtext = urwid.Text('')
+            super().__init__(self.wtext, 'footer')
+            self.msgs, self.mw = [], mw
+            self.add_text('Welcome!')
 
-    def add_text(self, txt, timeout=0):
-        if 0 < timeout:
-            self.msgs.append((txt, time.time() + timeout))
-            self.mw.loop.set_alarm_in(timeout, self._reload_text)
-        else:
-            self.msgs.append((txt, 0))
-        self._set_text(txt)
+        def add_text(self, txt, timeout=0):
+            if 0 < timeout:
+                self.msgs.append((txt, time.time() + timeout))
+                self.mw.loop.set_alarm_in(timeout, self._reload_text)
+            else:
+                self.msgs.append((txt, 0))
+            self._set_text(txt)
 
-    def _reload_text(self, obj, user_data):
-        count, t0 = 0, time.time()
-        for it in range(len(self.msgs)):
-            idx = it - count
-            if self.msgs[idx][1] and self.msgs[idx][1] < t0:
-                del self.msgs[idx]
-                count += 1
-        if count:
-            self._set_text(self.msgs[-1][0])
+        def _reload_text(self, obj, user_data):
+            count, t0 = 0, time.time()
+            for it in range(len(self.msgs)):
+                idx = it - count
+                if self.msgs[idx][1] and self.msgs[idx][1] < t0:
+                    del self.msgs[idx]
+                    count += 1
+            if count:
+                self._set_text(self.msgs[-1][0])
 
-    def _set_text(self, markup):
-        if isinstance(markup, str):
-            markup = [markup]
-        self.wtext.set_text([' '] + markup)
-
-
-class StatusBarAsker(urwid.Edit, metaclass=urwid.signals.MetaSignals):
-    signals = ['ask_done']
-
-    def __init__(self, *args, **kwargs):
-        self.validator = kwargs.pop('validator', None)
-        super().__init__(*args, **kwargs)
-
-    def keypress(self, size, key):
-        if key == 'enter':
-            urwid.emit_signal(self, 'ask_done', self.get_edit_text())
-        elif key == 'esc':
-            urwid.emit_signal(self, 'ask_done', None)
-        elif len(key) != 1 or self.validator is None or self.validator(key):
-            super().keypress(size, key)
+        def _set_text(self, markup):
+            if isinstance(markup, str):
+                markup = [markup]
+            self.wtext.set_text([' '] + markup)
 
 
-class HexView(urwid.ListWalker):
-    def __init__(self, data):
-        self.focus = (0, 0)
-        self.view = sd.DataView(data)
+    class StatusBarAsker(urwid.Edit, metaclass=urwid.signals.MetaSignals):
+        signals = ['ask_done']
 
-    def __getitem__(self, position):
-        line, _ = position
-        _write('position =', position)
-        if 0 <= line and line < self.view.max_lines():
-            addr_width = self.view.addr_width()
-            addr, data = list(self.view(line, 1).items())[0]
+        def __init__(self, *args, **kwargs):
+            self.validator = kwargs.pop('validator', None)
+            super().__init__(*args, **kwargs)
 
-            # Widgets for columns
-            widgets = [('pack', urwid.Text([('addr', '{addr:#0{aw}x}:'.format(
-                addr=addr, aw=addr_width
-            ))]))]
-            data = [[('pack', urwid.Text('{:02x}'.format(b))) for b in d] for d in data]
-            widgets.extend([urwid.Columns(d, dividechars=1) for d in data])
+        def keypress(self, size, key):
+            if key == 'enter':
+                urwid.emit_signal(self, 'ask_done', self.get_edit_text())
+            elif key == 'esc':
+                urwid.emit_signal(self, 'ask_done', None)
+            elif len(key) != 1 or self.validator is None or self.validator(key):
+                super().keypress(size, key)
 
-            return urwid.Columns(widgets, dividechars=2, min_width=addr_width)
-        raise IndexError
 
-    def next_position(self, position):
-        if position[0] < self.view.max_lines():
-            return (position[0] + 1, position[1])
-        raise IndexError
+    class HexView(urwid.ListWalker):
+        def __init__(self, data):
+            self.focus = (0, 0)
+            self.view = sd.DataView(data)
 
-    def prev_position(self, position):
-        if position[0] != 0:
-            return (position[0] - 1, position[1])
-        raise IndexError
+        def __getitem__(self, position):
+            line, _ = position
+            _write('position =', position)
+            if 0 <= line and line < self.view.max_lines():
+                addr, data = list(self.view(line, 1).items())[0]
+
+                # Widgets for columns
+                widgets = [('pack', urwid.Text([('addr', addr)]))]
+                data = [[('pack', urwid.Text(b)) for b in d] for d in data['data']]
+                widgets.extend([urwid.Columns(d, dividechars=1) for d in data])
+
+                return urwid.Columns(widgets, dividechars=2, min_width=len(addr))
+            raise IndexError
+
+        def next_position(self, position):
+            if position[0] < self.view.max_lines():
+                return (position[0] + 1, position[1])
+            raise IndexError
+
+        def prev_position(self, position):
+            if position[0] != 0:
+                return (position[0] - 1, position[1])
+            raise IndexError
 
 
 class CursesMainWindow:
