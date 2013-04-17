@@ -92,7 +92,7 @@ class NamedDict(MetaConf):
             raise KeyError
 
     def copy(self, other):
-        for field in type(other).fields:
+        for field in type(other).metaconf('fields'):
             setattr(self, '_{}'.format(field), other[field])
 
 
