@@ -1,5 +1,6 @@
 import collections
 import mmap
+import math
 import os
 import struct
 
@@ -12,7 +13,6 @@ from srddl.core.offset import Offset
 class Data:
     def __init__(self, buf, ro=False):
         self.buf, self.ro, self._mapped = buf, ro, dict()
-        self.view = DataView(self)
 
         # Probably not foolproof...
         try: self.buf[0] = self.buf[0]
@@ -60,34 +60,24 @@ class DataView:
     COLUMN_SIZE = 16
 
     def __init__(self, data):
-        self._data, self._offset, self._sline = data, 0, 0
+        self._data, self._offset = data, 0
 
-    def __call__(self, lines):
-        # Move _sline arround if needed.
-        if self._sline is None:
-            self._sline = self.line - lines // 2
-            self._sline = max(0, min(self._sline, self.line - lines))
-        elif self.line < self._sline:
-            self._sline = self.line
-        elif self._sline + lines <= self.line:
-            self._sline = self.line - lines + 1
-
+    def __call__(self, line, lines):
         # Fetch data and return it.
-        column = DataView.COLUMN_SIZE
-        offset = self._sline * column
+        column, offset = DataView.COLUMN_SIZE, line * DataView.COLUMN_SIZE
         size = min(lines * column, len(self._data) - offset)
         data = self._data.unpack_from('{}B'.format(size), offset)
+        data  = zip(*([iter(data)] * column))
         return collections.OrderedDict(zip(
             (offset + it * column for it in range(lines)),
-            zip(*([iter(data)] * column))
+            [zip(*([iter(d)] * (len(d) // 2))) for d in data]
         ))
 
     @property
     def offset(self):
         return self._offset
 
-    @offset.setter
-    def offset(self, value):
+    def set_offset(self, value):
         self._offset = max(min(len(self._data), value), 0)
 
     @property
@@ -128,6 +118,12 @@ class DataView:
     def pagedown(self):
         for _ in range(DataView.PAGE_SIZE):
             self.down()
+
+    def max_lines(self):
+        return math.ceil(len(self._data) / DataView.COLUMN_SIZE)
+
+    def addr_width(self):
+        return len(hex(len(self._data))) + 1
 
 
 class FileData(Data):
