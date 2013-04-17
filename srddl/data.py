@@ -3,6 +3,7 @@ import mmap
 import math
 import os
 import struct
+import string
 
 import srddl.core.helpers as sch
 import srddl.exceptions as se
@@ -57,21 +58,32 @@ class Data:
 
 class DataView:
     PAGE_SIZE = 16
-    COLUMN_SIZE = 16
+    COLUMN_SIZE = 8
 
-    def __init__(self, data):
-        self._data, self._offset = data, 0
+    def __init__(self, data, columns=2):
+        self._data, self._offset, self._columns = data, 0, columns
 
-    def __call__(self, line, lines):
+    def __call__(self, line, lines, display=True):
         # Fetch data and return it.
-        column, offset = DataView.COLUMN_SIZE, line * DataView.COLUMN_SIZE
+        column = DataView.COLUMN_SIZE * self._columns
+        offset = line * column
         size = min(lines * column, len(self._data) - offset)
         data = self._data.unpack_from('{}B'.format(size), offset)
         data  = zip(*([iter(data)] * column))
-        return collections.OrderedDict(zip(
+        tmpres = collections.OrderedDict(zip(
             (offset + it * column for it in range(lines)),
-            [zip(*([iter(d)] * (len(d) // 2))) for d in data]
+            [list(zip(*([iter(d)] * DataView.COLUMN_SIZE))) for d in data]
         ))
+        if not display:
+            return tmpres
+        addr_width, res = len(hex(len(self._data))), collections.OrderedDict()
+        strings = lambda b: chr(b) if chr(b) in string.printable else None
+        for addr, data in tmpres.items():
+            res['{addr:#0{aw}x}'.format(addr=addr, aw=addr_width)] = {
+                'data': [['{:02x}'.format(b) for b in d] for d in data],
+                'strings': [[strings(b) for b in d] for d in data],
+            }
+        return res
 
     @property
     def offset(self):
@@ -121,9 +133,6 @@ class DataView:
 
     def max_lines(self):
         return math.ceil(len(self._data) / DataView.COLUMN_SIZE)
-
-    def addr_width(self):
-        return len(hex(len(self._data))) + 1
 
 
 class FileData(Data):
