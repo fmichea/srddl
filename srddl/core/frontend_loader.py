@@ -47,7 +47,7 @@ class Frontend(sch.MetaConf, metaclass=abc.ABCMeta):
 
 def load_frontends(argument_parser):
     main_root = os.path.join(os.path.dirname(__file__), 'frontends')
-    modules = []
+    modules, frontends = [], dict()
 
     # Finds all the front-ends that can be loaded.
     for root, dirs, files in os.walk(main_root):
@@ -70,7 +70,9 @@ def load_frontends(argument_parser):
                     try:
                         tmp = item[1]()
                         tmp.frontend_init(argument_parser)
+                        frontends[tmp.metaconf('name')] = tmp
                     except TypeError:
                         pass
         except ImportError:
             pass
+    return frontends

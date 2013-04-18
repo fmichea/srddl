@@ -19,12 +19,16 @@ def main():
     dgroup.add_argument('-P', '--pdb', action='store_true', default=False,
                         help='start pdb debugger on exception.')
 
-    srddl.core.frontend_loader.load_frontends(parser.add_subparsers())
+    frontends = srddl.core.frontend_loader.load_frontends(parser.add_subparsers())
 
-    args = parser.parse_args(sys.argv[1:])
+    args, func = parser.parse_args(sys.argv[1:]), None
     if hasattr(args, 'func'):
+        func = args.func
+    elif not sys.stdin.isatty() and 'gui' in frontends:
+        func = frontends['gui'].parser.get_default('func')
+    if func is not None:
         try:
-            args.func(args)
+            func(args)
         except Exception as err:
             if args.backtrace or args.pdb:
                 traceback.print_exc()
