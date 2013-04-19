@@ -134,7 +134,7 @@ class DataView:
             self.down()
 
     def max_lines(self):
-        return math.ceil(len(self._data) / DataView.COLUMN_SIZE)
+        return math.ceil(len(self._data) / (DataView.COLUMN_SIZE * self._columns))
 
 
 class FileData(Data):
