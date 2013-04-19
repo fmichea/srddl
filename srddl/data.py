@@ -77,7 +77,9 @@ class DataView:
         if not display:
             return tmpres
         addr_width, res = len(hex(len(self._data))), collections.OrderedDict()
-        strings = lambda b: chr(b) if chr(b) in string.printable else None
+
+        printable = set(string.printable) - set('\a\b\f\n\r\t\v')
+        strings = lambda b: chr(b) if chr(b) in printable else None
         for addr, data in tmpres.items():
             res['{addr:#0{aw}x}'.format(addr=addr, aw=addr_width)] = {
                 'data': [['{:02x}'.format(b) for b in d] for d in data],
