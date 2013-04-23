@@ -120,7 +120,7 @@ class BitMaskField(IntField):
 
     def decode(self, instance, offset):
         nb = super().decode(instance, offset)
-        if isinstance(nb, Value):
+        if isinstance(nb, scf.Value):
             return [nb]
         res, mask = [], 0
         for val_num, val in self._values.items():
@@ -129,13 +129,13 @@ class BitMaskField(IntField):
                 mask |= val_num
         if mask != nb:
             res.append(nb ^ mask)
-        return (res if res else nb)
+        return (res if res else [nb])
 
     def _display_value(self, vals):
         res = []
         for val in vals:
-            if isinstance(val, Value):
+            if isinstance(val, scf.Value):
                 res.append(val['display_value'])
             else:
                 res.append(val)
-        return ' | '.join(res)
+        return ' | '.join(str(c) for c in res)
