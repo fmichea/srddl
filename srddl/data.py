@@ -12,8 +12,39 @@ from srddl.core.fields import BoundValue
 from srddl.core.offset import Offset
 
 class Data:
+    class MappedData(dict):
+        def __getitem__(self, key):
+            if isinstance(key, tuple):
+                offset, fltr = key
+            else:
+                offset, fltr = key, None
+            offset = Offset(offset)
+            res = super().__getitem__(offset)
+            res = [x for x in res if fltr is None or fltr(x)]
+            if len(res) == 1:
+                return res[0]
+            raise se.NoMappedDataError(offset)
+
+        def keys(self):
+            for offset in sorted(super().keys()):
+                if len(super().__getitem__(offset)) == 1:
+                    # XXX: Should we yield with a None filter to make fetching
+                    #      of offsets easier? (not two cases to manage)
+                    yield offset
+                else:
+                    for s in self[offset]:
+                        yield (offset, lambda t: t is s)
+
+        def values(self):
+            for _, item in self.items():
+                yield item
+
+        def items(self):
+            for key in self.keys():
+                yield (key, self.__getitem__(key))
+
     def __init__(self, buf, ro=False):
-        self.buf, self.ro, self._mapped = buf, ro, dict()
+        self.buf, self.ro, self.mapped = buf, ro, Data.MappedData()
 
         # Probably not foolproof...
         try: self.buf[0] = self.buf[0]
@@ -25,17 +56,10 @@ class Data:
     def __len__(self):
         return len(self.buf)
 
-    def mapped(self, offset, fltr=None):
-        offset = Offset(offset)
-        res = [x for x in self._mapped[offset] if fltr is None or fltr(x)]
-        if len(res) == 1:
-            return res[0]
-        raise se.NoMappedDataError(offset)
-
     def map(self, offset, struct):
         offset = Offset(offset)
         s = struct(self, offset)
-        self._mapped[offset] = self._mapped.get(offset, []) + [s]
+        self.mapped[offset] = self.mapped.get(offset, []) + [s]
         s._setup(self)
         return s
 
