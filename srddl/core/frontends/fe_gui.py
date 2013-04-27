@@ -9,11 +9,11 @@ except ImportError:
     GUI_ON = False
 
 import srddl.core.fields as scf
-import srddl.core.frontend_loader as scf
+import srddl.core.frontend_loader as scfe
 import srddl.data as sd
 import srddl.models as sm
 
-class GUI(scf.Frontend):
+class GUI(scfe.Frontend):
     class Meta:
         name = 'gui'
         help = 'graphical interface!'
@@ -152,6 +152,56 @@ if GUI_ON:
     class StructureTreeView(QtGui.QTreeView):
         def __init__(self, data, parent=None):
             super().__init__(parent=parent)
+
+            self._data, rootModel = data, QtGui.QStandardItemModel()
+            root = rootModel.invisibleRootItem()
+
+            TREE = [
+                (list, 'list'),
+                (tuple, 'tuple'),
+                (sm.Struct, 'struct'),
+                (sd.Data.MappedData, 'mappeddata'),
+                (scf.BoundValue, 'boundvalue'),
+                (scf.Value, 'value'),
+            ]
+            def _visit_tree(root, elem, indent=0):
+                def _visit_func_getter(elem):
+                    for tmp in TREE:
+                        t, funcname = tmp
+                        if isinstance(elem, t):
+                            return ('_visit_' + funcname)
+                    return None
+                def _visit_tuple(tpl):
+                    funcname = _visit_func_getter(tpl[1])
+                    if funcname is not None:
+                        lcls[funcname](elem)
+                def _visit_mappeddata(md):
+                    _visit_list(md.values())
+                def _visit_list(lst, key=None, gname=None, gval=None):
+                    if key is not None:
+                        lst = sorted(lst, key=key)
+                    for l in lst:
+                        if gval is not None:
+                            l = (gname(l) if gname is not None else l, gval(l))
+                        _visit_tree(root, l)
+                def _visit_struct(struct):
+                    print('  ' * indent, '+ Struct:', hex(struct['offset']), struct.__class__.__name__)
+                    for field_name in struct['fields']:
+                        field = getattr(struct, field_name)
+                        _visit_tree(root, (field_name, field), indent=indent+1)
+                def _visit_boundvalue(tmp):
+                    name, boundvalue = tmp
+                    print('  ' * indent, '+', name, ':', boundvalue['display_value'])
+                    sv = None #boundvalue['subvalues']
+                    if sv is not None:
+                        _visit_tree(root, sv, indent=indent+1)
+                def _visit_value(value):
+                    print('  ' * indent, '+ Value:', value['display_value'])
+                lcls, funcname = locals(), _visit_func_getter(elem)
+                if funcname is not None:
+                    lcls[funcname](elem)
+            _visit_tree(root, data.mapped)
+            #self.setModel(rootModel)
 
     class MainWindow(QtGui.QMainWindow):
         def __init__(self):
