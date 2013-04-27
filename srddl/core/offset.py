@@ -16,6 +16,9 @@ class _Offset:
         else:
             self.byte, self.bit = byte, bit
 
+    def __index__(self):
+        return self.byte
+
     def __repr__(self):
         return '<{} at {:#x} with value ({}, {})>'.format(
             self.__class__.__name__, id(self), self.byte, self.bit
