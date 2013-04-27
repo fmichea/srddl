@@ -21,6 +21,9 @@ class _Offset:
             self.__class__.__name__, id(self), self.byte, self.bit
         )
 
+    def __str__(self):
+        return repr(self)
+
     def __hash__(self):
         return hash('{}::{}'.format(self.byte, self.bit))
 

@@ -101,9 +101,12 @@ class Struct(metaclass=_MetaStruct):
 
     def __repr__(self):
         args = [self.__class__.__name__, id(self), self['offset']]
-        res = '<{} at {:#x} at offset {}\n'.format(*args)
+        return '<{} at {:#x} at offset {}>'.format(*args)
+
+    def __str__(self):
+        res = repr(self)[:-1] + '\n'
         for field in self['fields']:
-            res += '    {} = {},\n'.format(field, getattr(self, field))
+            res += '    {} = {},\n'.format(field, str(getattr(self, field)))
         res += '>'
         return res
 

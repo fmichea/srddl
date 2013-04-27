@@ -125,7 +125,7 @@ class Value(sch.NamedDict):
 
     def __repr__(self):
         return '<Value at {:#x} with value {}>'.format(
-            id(self), self['display_value']
+            id(self), self['value']
         )
 
     @property
@@ -162,11 +162,16 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
 
     def __repr__(self):
         res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
-        value = self['display_value']
+        value = self['value']
         if value is not None:
             res += ' with value {}'.format(value)
         res += '>'
         return res
+
+    def __str__(self):
+        return '{} {}>'.format(
+            ' '.join(repr(self).split()[:6]), self['display_value']
+        )
 
     def __getitem__(self, item):
         if item != 'value' and item in Value.metaconf('fields'):
@@ -201,7 +206,7 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
             if self['name'] is not None:
                 res = super()._display_value
             else:
-                res = repr(self['value']).replace('\n', '\n    ')
+                res = str(self['value']).replace('\n', '\n    ')
         return res
 
     def __bool__(self):
