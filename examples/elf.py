@@ -18,7 +18,7 @@ class IntFieldN(sf.IntField):
     @functools.lru_cache()
     def _size(self, struct):
         try:
-            header = struct['data'].mapped(0)
+            header = struct['data'].mapped[0]
         except:
             header = struct
         res = header.e_indent.ei_class['value'] * 4
@@ -34,7 +34,7 @@ class BitMaskFieldN(sf.BitMaskField):
     @functools.lru_cache()
     def _size(self, struct):
         try:
-            header = struct['data'].mapped(0)
+            header = struct['data'].mapped[0]
         except se.NoMappedDataError:
             header = struct
         res = header.e_indent.ei_class['value'] * 4
@@ -158,7 +158,7 @@ class ElfN_Phdr(sm.Struct):
     p_align = IntFieldN()
 
     def _pre_mapping(self, data, lst):
-        if data.mapped(0).e_indent.ei_class['name'] == 'ELFCLASS64':
+        if data.mapped[0].e_indent.ei_class['name'] == 'ELFCLASS64':
             return [('p_flags', 1)]
         return []
 
