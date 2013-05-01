@@ -1,4 +1,6 @@
 import collections
+import functools
+import itertools
 import math
 import sys
 
@@ -10,6 +12,7 @@ except ImportError:
 
 import srddl.core.fields as scf
 import srddl.core.frontend_loader as scfe
+import srddl.core.frontends.fe_common as scfc
 import srddl.data as sd
 import srddl.models as sm
 
@@ -60,6 +63,22 @@ if GUI_ON:
     COLORS = {
         'addr#bg': QtGui.QColor(240, 240, 240),
         'faded#fg': QtGui.QColor(200, 200, 200),
+
+        # Colors used to recognize the fields.
+        'c1#fg': QtGui.QColor(15, 9, 44),
+        'c1#bg': QtGui.QColor(149, 251, 255),
+        'c2#fg': QtGui.QColor(7, 18, 47),
+        'c2#bg': QtGui.QColor(255, 175, 221),
+        'c3#fg': QtGui.QColor(79, 5, 0),
+        'c3#bg': QtGui.QColor(165, 213, 62),
+        'c4#fg': QtGui.QColor(0, 0, 0),
+        'c4#bg': QtGui.QColor(249, 255, 37),
+        'c5#fg': QtGui.QColor(82, 57, 21),
+        'c5#bg': QtGui.QColor(141, 255, 206),
+        'c6#fg': QtGui.QColor(165, 212, 62),
+        'c6#bg': QtGui.QColor(61, 9, 5),
+        'c7#fg': QtGui.QColor(38, 8, 29),
+        'c7#bg': QtGui.QColor(255, 175, 0),
     }
 
     FONTS = {
@@ -69,6 +88,9 @@ if GUI_ON:
     class HexView(QtGui.QAbstractScrollArea):
         def __init__(self, data, parent=None):
             super().__init__(parent=parent)
+
+            # Colors.
+            self.colors = scfc.HexViewColors()
 
             # Viewport configuration.
             self.viewport().setAttribute(QtCore.Qt.WidgetAttribute.WA_StaticContents)
@@ -98,10 +120,13 @@ if GUI_ON:
             for it, (addr, data) in enumerate(self._dv(line, self._lines() + 1).items()):
                 y = self.print(it, 0, '{}:'.format(addr), color='addr')
 
+                cur_offset = int(addr, 16)
                 for d in data['data']:
                     y += 15
                     for b in d:
-                        y += self.print(it, y, b)
+                        color = self.colors.color(cur_offset)[0]
+                        y += self.print(it, y, b, color=color)
+                        cur_offset += 1
 
                 y += 15
                 y += self.print(it, y, '|', color='faded')
@@ -153,12 +178,46 @@ if GUI_ON:
             return self.fontMetrics().height() + 4
 
 
-    class StructureTreeView(QtGui.QTreeView):
-        def __init__(self, data, parent=None):
-            super().__init__(parent=parent)
+    class StructureTreeWidget(QtGui.QTreeWidget):
+        class CustomTreeItem(QtGui.QTreeWidgetItem):
+            def __init__(self, elem, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.setFont(0, FONTS['monospace'])
+                self.elem = elem
 
-            self._data, rootModel = data, QtGui.QStandardItemModel()
-            root = rootModel.invisibleRootItem()
+        class StructTreeItem(CustomTreeItem):
+            def __init__(self, struct, parent=None):
+                res = '{offset}: {name} structure.'.format(
+                    offset = hex(struct['offset']),
+                    name = struct.__class__.__name__
+                )
+                super().__init__(struct, [res], parent=parent)
+
+        class BoundValueTreeItem(CustomTreeItem):
+            def __init__(self, name, boundvalue, color, parent=None):
+                res = '{name}: {bv}'.format(name=name, bv=boundvalue)
+                super().__init__(boundvalue, [res], parent=parent)
+
+                self.color = color
+                self.setForeground(0, COLORS[color + '#fg'])
+                self.setBackground(0, COLORS[color + '#bg'])
+
+        class ValueTreeItem(CustomTreeItem):
+            def __init__(self, value, parent=None):
+                res = '{name}: {value}'.format(
+                    name=value['name'],
+                    value=value['display_value']
+                )
+                super().__init__(value, [res], parent=parent)
+
+        def __init__(self, data, hexview, parent=None):
+            super().__init__(parent=parent)
+            self._data, self.hexview = data, hexview
+
+            self.itemExpanded.connect(self._itemExpand_handler)
+            self.itemCollapsed.connect(functools.partial(
+                self._itemExpand_handler, expand=False
+            ))
 
             TREE = [
                 (list, 'list'),
@@ -189,23 +248,48 @@ if GUI_ON:
                             l = (gname(l) if gname is not None else l, gval(l))
                         _visit_tree(root, l)
                 def _visit_struct(struct):
-                    print('  ' * indent, '+ Struct:', hex(struct['offset']), struct.__class__.__name__)
+                    item = StructureTreeWidget.StructTreeItem(struct)
+                    colors = itertools.cycle(['c{}'.format(i) for i in range(1, 8)])
                     for field_name in struct['fields']:
                         field = getattr(struct, field_name)
-                        _visit_tree(root, (field_name, field), indent=indent+1)
+                        _visit_tree(item, (field_name, field, next(colors)),
+                                    indent=indent+1)
+                    root.addChild(item)
                 def _visit_boundvalue(tmp):
-                    name, boundvalue = tmp
-                    print('  ' * indent, '+', name, ':', boundvalue['display_value'])
-                    sv = None #boundvalue['subvalues']
-                    if sv is not None:
-                        _visit_tree(root, sv, indent=indent+1)
+                    name, bv, color = tmp
+                    item = StructureTreeWidget.BoundValueTreeItem(name, bv, color)
+                    _visit_tree(item, bv['value'])
+                    root.addChild(item)
                 def _visit_value(value):
-                    print('  ' * indent, '+ Value:', value['display_value'])
+                    root.addChild(StructureTreeWidget.ValueTreeItem(value))
                 lcls, funcname = locals(), _visit_func_getter(elem)
                 if funcname is not None:
                     lcls[funcname](elem)
-            _visit_tree(root, data.mapped)
-            #self.setModel(rootModel)
+            _visit_tree(self.invisibleRootItem(), data.mapped)
+
+        def _itemExpand_handler(self, item, expand=True):
+            if isinstance(item, StructureTreeWidget.BoundValueTreeItem):
+                if item.childCount() == 1:
+                    item.child(0).setExpanded(expand)
+            if isinstance(item, StructureTreeWidget.StructTreeItem):
+                if expand:
+                    func = self.hexview.colors.colorize
+                else:
+                    func = self.hexview.colors.clear
+                def _apply_func_to_tree(item):
+                    level, parent = 0, item.parent()
+                    while parent:
+                        parent, level = parent.parent(), level + 1
+                    for it_nb in range(item.childCount()):
+                        it = item.child(it_nb)
+                        if isinstance(it, StructureTreeWidget.BoundValueTreeItem):
+                            off, sz = it.elem['offset'].byte, it.elem['size'].byte
+                            func(off, sz, level, it.color)
+                        if it.isExpanded():
+                            _apply_func_to_tree(it)
+                _apply_func_to_tree(item)
+                self.hexview.viewport().repaint()
+
 
     class MainWindow(QtGui.QMainWindow):
         def __init__(self):
@@ -219,9 +303,9 @@ if GUI_ON:
             self.setWindowTitle('Welcome! - SRDDL')
 
             # Central widget.
-            layout = QtGui.QHBoxLayout();
-            layout.addWidget(HexView(self.data))
-            layout.addWidget(StructureTreeView(self.data))
+            layout, hexview = QtGui.QHBoxLayout(), HexView(self.data)
+            layout.addWidget(hexview)
+            layout.addWidget(StructureTreeWidget(self.data, hexview))
 
             widget = QtGui.QWidget()
             widget.setLayout(layout)
