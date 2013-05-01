@@ -62,6 +62,10 @@ if GUI_ON:
         'faded': QtGui.QColor(200, 200, 200),
     }
 
+    FONTS = {
+        'monospace': QtGui.QFont("DejaVu Sans Mono"),
+    }
+
     class HexView(QtGui.QAbstractScrollArea):
         def __init__(self, data, parent=None):
             super().__init__(parent=parent)
@@ -76,7 +80,7 @@ if GUI_ON:
             self._dv = sd.DataView(data)
 
             # Font configuration.
-            self.setFont(QtGui.QFont("DejaVu Sans Mono"))
+            self.setFont(FONTS['monospace'])
             self.setFixedWidth(550)
 
         @property
