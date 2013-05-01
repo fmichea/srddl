@@ -58,8 +58,8 @@ if GUI_ON:
     ])
 
     COLORS = {
-        'addr': QtGui.QColor(240, 240, 240),
-        'faded': QtGui.QColor(200, 200, 200),
+        'addr#bg': QtGui.QColor(240, 240, 240),
+        'faded#fg': QtGui.QColor(200, 200, 200),
     }
 
     FONTS = {
@@ -96,7 +96,7 @@ if GUI_ON:
 
             line = self.y // self._line_height()
             for it, (addr, data) in enumerate(self._dv(line, self._lines() + 1).items()):
-                y = self.print(it, 0, '{}:'.format(addr), bkg=COLORS['addr'])
+                y = self.print(it, 0, '{}:'.format(addr), color='addr')
 
                 for d in data['data']:
                     y += 15
@@ -104,18 +104,18 @@ if GUI_ON:
                         y += self.print(it, y, b)
 
                 y += 15
-                y += self.print(it, y, '|', fg=COLORS['faded'])
+                y += self.print(it, y, '|', color='faded')
                 for d in data['strings']:
                     for b in d:
                         kwds = dict(padding=0)
                         if b is None:
                             b = '.'
-                            kwds['fg'] = COLORS['faded']
+                            kwds['color'] = 'faded'
                         y += self.print(it, y, b, **kwds)
                     y += 10
-                y += self.print(it, y - 10, '|', fg=COLORS['faded'])
+                y += self.print(it, y - 10, '|', color='faded')
 
-        def print(self, line, y, text, bkg=None, fg=None, padding=2):
+        def print(self, line, y, text, color=None, padding=2):
             painter = QtGui.QPainter(self.viewport())
 
             width = painter.fontMetrics().width(text) + padding * 2
@@ -125,11 +125,11 @@ if GUI_ON:
             rect = QtCore.QRectF(y, line * height, width, height)
             rect = rect.translated(0, -(self.y % self._line_height()))
 
-            if fg is not None:
-                painter.setPen(fg)
+            if color is not None and (color + '#fg') in COLORS:
+                painter.setPen(COLORS[color + '#fg'])
 
-            if bkg is not None:
-                painter.fillRect(rect, bkg)
+            if color is not None and (color + '#bg') in COLORS:
+                painter.fillRect(rect, COLORS[color + '#bg'])
             painter.drawText(rect, QtCore.Qt.AlignCenter, text)
 
             return width
