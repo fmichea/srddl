@@ -179,6 +179,18 @@ if GUI_ON:
 
 
     class StructureTreeWidget(QtGui.QTreeWidget):
+        class LegendRectWidget(QtGui.QIcon):
+            def __init__(self, color):
+                width, height = 35, 20
+                try:
+                    img = QtGui.QImage(width, height, QtGui.QImage.Format_ARGB32)
+                    painter = QtGui.QPainter(img)
+                    painter.fillRect(0, 0, width, height, COLORS[color + '#fg'])
+                    painter.fillRect(1, 1, width - 2, height - 2, COLORS[color + '#bg'])
+                finally:
+                    painter.end()
+                super().__init__(QtGui.QPixmap(img))
+
         class CustomTreeItem(QtGui.QTreeWidgetItem):
             def __init__(self, elem, *args, **kwargs):
                 super().__init__(*args, **kwargs)
@@ -197,10 +209,8 @@ if GUI_ON:
             def __init__(self, name, boundvalue, color, parent=None):
                 res = '{name}: {bv}'.format(name=name, bv=boundvalue)
                 super().__init__(boundvalue, [res], parent=parent)
-
+                self.setIcon(0, StructureTreeWidget.LegendRectWidget(color))
                 self.color = color
-                self.setForeground(0, COLORS[color + '#fg'])
-                self.setBackground(0, COLORS[color + '#bg'])
 
         class ValueTreeItem(CustomTreeItem):
             def __init__(self, value, parent=None):
