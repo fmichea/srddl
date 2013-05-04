@@ -48,7 +48,7 @@ class IntField(scf.AbstractField):
         res = instance['data'].unpack_from(self._sig(size), offset.byte)[0]
         return self._values.get(res, res)
 
-    def encode(self, data, offset, value):
+    def encode(self, instance, offset, value):
         size = self.__get__(instance)['size']
         instance['data'].pack_into(self._sig(size), offset.byte, value)
 
