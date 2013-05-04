@@ -86,10 +86,10 @@ class ElfN_Ehdr(sm.Struct):
     e_indent = sf.SuperField(ElfN_Ehdr__Indent)
 
     e_type = sf.IntField('Object file type', size=sf.IntField.Size.INT16, values=[
-        sf.Value(0, 'ET_NONE', 'Unknown type.'),
-        sf.Value(1, 'ET_REL', 'Relocatable file.'),
-        sf.Value(2, 'ET_EXEC', 'Executable file.'),
-        sf.Value(3, 'ET_DYN', 'Shared object.'),
+        sf.Value(0, 'ET_NONE', 'Unknown type'),
+        sf.Value(1, 'ET_REL', 'Relocatable file'),
+        sf.Value(2, 'ET_EXEC', 'Executable file'),
+        sf.Value(3, 'ET_DYN', 'Shared object'),
         # ET_CORE left appart for testing purposes.
     ])
 
@@ -110,7 +110,7 @@ class ElfN_Ehdr(sm.Struct):
     e_phentsize = sf.IntField('Program header entry size', size=sf.IntField.Size.INT16)
     e_phnum = sf.IntField('Number of entries in program header table', size=sf.IntField.Size.INT16)
     e_shentsize = sf.IntField('Section header entry size', size=sf.IntField.Size.INT16)
-    e_shnum = sf.IntField('Number of entrues in section heade table', size=sf.IntField.Size.INT16)
+    e_shnum = sf.IntField('Number of entries in section header table', size=sf.IntField.Size.INT16)
     e_shstrndx = sf.IntField('Index of string table section header', size=sf.IntField.Size.INT16)
 
     def _setup(self, data):
