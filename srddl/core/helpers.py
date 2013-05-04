@@ -91,6 +91,11 @@ class NamedDict(MetaConf):
         except AttributeError:
             raise KeyError
 
+    def __setitem__(self, attr_name, value):
+        if attr_name not in self.metaconf('fields'):
+            raise KeyError
+        setattr(self, '_{}'.format(attr_name), value)
+
     def copy(self, other):
         for field in type(other).metaconf('fields'):
             setattr(self, '_{}'.format(field), other[field])
