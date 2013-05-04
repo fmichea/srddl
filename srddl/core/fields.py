@@ -164,14 +164,15 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
         res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
         value = self['value']
         if value is not None:
-            res += ' with value {}'.format(value)
+            res += ' with value {}'.format(repr(value))
         res += '>'
         return res
 
     def __str__(self):
-        return '{} {}>'.format(
-            ' '.join(repr(self).split()[:5]), self['display_value']
-        )
+        res = ' '.join(repr(self).split()[:5])
+        if res.endswith('>'):
+            return res
+        return '{} {}>'.format(res, self['display_value'])
 
     def __getitem__(self, item):
         if item != 'value' and item in Value.metaconf('fields'):
@@ -202,11 +203,13 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     @property
     def _display_value(self):
         res = self._field._display_value(self._value)
+        if self['name'] is not None:
+            res += ' ({})'.format(self['name'])
         if res is None and self['value'] is not None:
             if self['name'] is not None:
                 res = super()._display_value
             else:
-                res = str(self['value']).replace('\n', '\n    ')
+                res = str(self['value'])
         return res
 
     def __bool__(self):

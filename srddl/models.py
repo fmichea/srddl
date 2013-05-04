@@ -107,7 +107,8 @@ class Struct(metaclass=_MetaStruct):
     def __str__(self):
         res = repr(self)[:-1] + '\n'
         for field in self['fields']:
-            res += '    {} = {},\n'.format(field, str(getattr(self, field)))
+            val = str(getattr(self, field)).replace('\n', '\n    ')
+            res += '    {} = {},\n'.format(field, val)
         res += '>'
         return res
 
