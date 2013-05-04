@@ -25,7 +25,14 @@ class _Offset:
         )
 
     def __str__(self):
-        return repr(self)
+        res = '{} byte'.format(self.byte)
+        if 1 < self.byte:
+            res += 's'
+        if self.bit:
+            res += ' {} bit'.format(self.bit)
+            if 1 < self.bit:
+                res += 's'
+        return res
 
     def __hash__(self):
         return hash('{}::{}'.format(self.byte, self.bit))
