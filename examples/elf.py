@@ -25,8 +25,9 @@ class IntFieldN(sf.IntField):
         return res
 
 class ElfN_Off(IntFieldN):
-    def _display_value(self, val):
-        return '{:#x}'.format(val)
+    def __init__(self, *args, **kwargs):
+        kwargs.update({'base': sf.IntField.Base.HEX})
+        super().__init__(*args, **kwargs)
 
 class ElfN_Addr(ElfN_Off): pass
 

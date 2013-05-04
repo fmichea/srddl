@@ -27,6 +27,7 @@ class IntFieldBoundValue(scf.BoundValue):
 class IntField(scf.AbstractField):
     Size = sch.enum(BYTE=1, INT8=1, INT16=2, INT32=4, INT64=8)
     Endianess = sch.enum(LITTLE='<', BIG='>', NETWORK='!')
+    Base = sch.enum(BIN=2, OCT=8, DEC=10, HEX=16)
 
     class Meta:
         boundvalue_class = IntFieldBoundValue
@@ -36,6 +37,10 @@ class IntField(scf.AbstractField):
             self._size = kwargs.pop('size', IntField.Size.BYTE)
             if self._size not in IntField.Size.values():
                 raise ValueError("'size' is not valid.")
+        if not hasattr(self, '_base'):
+            self._base = kwargs.pop('base', IntField.Base.DEC)
+            if self._base not in IntField.Base.values():
+                raise ValueError("'base' is not valid.")
         self._signed = kwargs.pop('signed', False)
         self._endianess = kwargs.pop('endianess', IntField.Endianess.LITTLE)
         self._values = dict()
@@ -56,6 +61,13 @@ class IntField(scf.AbstractField):
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
         sig = self._endianess + 'bhiq'[log2[size.byte]]
         return (sig if self._signed else sig.upper())
+
+    def _display_value(self, value):
+        formats = {
+            IntField.Base.BIN: '{:#b}', IntField.Base.OCT: '{:#o}',
+            IntField.Base.DEC: '{}', IntField.Base.HEX: '{:#x}',
+        }
+        return formats.get(self._base, '{}').format(value)
 
 
 class ByteArrayField(scf.AbstractField):
