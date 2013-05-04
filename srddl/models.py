@@ -40,7 +40,8 @@ class _SrddlInternal:
                 if field_pi is None:
                     break
                 field, self.namespace[field_name] = field_pi, field_pi
-            field.initialize(self.instance, self.offset + cur_offset)
+            field.initialize(self.instance, self.offset + cur_offset,
+                             path=field_name)
             cur_offset += field.__get__(self.instance)['size']
         self.size = Size(cur_offset)
 
