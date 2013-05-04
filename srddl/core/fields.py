@@ -170,7 +170,7 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
 
     def __str__(self):
         return '{} {}>'.format(
-            ' '.join(repr(self).split()[:6]), self['display_value']
+            ' '.join(repr(self).split()[:5]), self['display_value']
         )
 
     def __getitem__(self, item):
