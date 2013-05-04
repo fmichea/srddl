@@ -177,7 +177,6 @@ if GUI_ON:
         def _line_height(self):
             return self.fontMetrics().height() + 4
 
-
     class StructureTreeWidget(QtGui.QTreeWidget):
         class LegendRectWidget(QtGui.QIcon):
             def __init__(self, color):
@@ -199,18 +198,37 @@ if GUI_ON:
 
         class StructTreeItem(CustomTreeItem):
             def __init__(self, struct, parent=None):
-                res = '{offset}: {name} structure.'.format(
+                res = '{offset}: {name} structure of size {size}.'.format(
                     offset = hex(struct['offset']),
-                    name = struct.__class__.__name__
+                    name = struct.__class__.__name__,
+                    size = struct['size'],
                 )
                 super().__init__(struct, [res], parent=parent)
 
         class BoundValueTreeItem(CustomTreeItem):
-            def __init__(self, name, boundvalue, color, parent=None):
-                res = '{name}: {bv}'.format(name=name, bv=boundvalue)
-                super().__init__(boundvalue, [res], parent=parent)
-                self.setIcon(0, StructureTreeWidget.LegendRectWidget(color))
+            def __init__(self, bv, color, parent=None):
                 self.color = color
+
+                # Description.
+                res = []
+                if bv['field']['path'] is not None:
+                    res.append('{}:'.format(bv['field']['path']))
+                if bv['field']['description'] is not None:
+                    res.append('{}'.format(bv['field']['description']))
+                else:
+                    res.append('[no description]')
+                if (bv['display_value'] is not None and
+                    '\n' not in bv['display_value']):
+                    res.append('with value {}'.format(bv['display_value']))
+                if bv['description'] is not None:
+                    res[-1] += ':'
+                    res.append('{}'.format(bv['description']))
+                res = ' '.join(res)
+                if not res.endswith('.'):
+                    res += '.'
+
+                super().__init__(bv, [res], parent=parent)
+                self.setIcon(0, StructureTreeWidget.LegendRectWidget(color))
 
         class ValueTreeItem(CustomTreeItem):
             def __init__(self, value, parent=None):
@@ -245,7 +263,7 @@ if GUI_ON:
                             return ('_visit_' + funcname)
                     return None
                 def _visit_tuple(tpl):
-                    funcname = _visit_func_getter(tpl[1])
+                    funcname = _visit_func_getter(tpl[0])
                     if funcname is not None:
                         lcls[funcname](elem)
                 def _visit_mappeddata(md):
@@ -262,12 +280,11 @@ if GUI_ON:
                     colors = itertools.cycle(['c{}'.format(i) for i in range(1, 8)])
                     for field_name in struct['fields']:
                         field = getattr(struct, field_name)
-                        _visit_tree(item, (field_name, field, next(colors)),
-                                    indent=indent+1)
+                        _visit_tree(item, (field, next(colors)), indent=indent+1)
                     root.addChild(item)
                 def _visit_boundvalue(tmp):
-                    name, bv, color = tmp
-                    item = StructureTreeWidget.BoundValueTreeItem(name, bv, color)
+                    bv, color = tmp
+                    item = StructureTreeWidget.BoundValueTreeItem(bv, color)
                     _visit_tree(item, bv['value'])
                     root.addChild(item)
                 def _visit_value(value):
