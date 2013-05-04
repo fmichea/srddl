@@ -61,7 +61,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         initialize = kwds.get('initialize')
         if initialize is not None:
             @functools.wraps(initialize)
-            def wrapper(self, instance, offset):
+            def wrapper(self, instance, offset, **kwargs):
                 # There are three states to the initialization process:
                 #
                 #   FieldInitStatus.KO, FieldInitStatus.INIT, FieldInitStatus.OK
@@ -77,7 +77,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 except se.NoFieldDataError:
                     status = FieldInitStatus.KO
                 self._set_data(instance, 'status', FieldInitStatus.INIT)
-                initialize(self, instance, offset)
+                initialize(self, instance, offset, **kwargs)
                 if status != FieldInitStatus.INIT:
                     self._set_data(instance, 'status', FieldInitStatus.OK)
             kwds['initialize'] = wrapper
@@ -154,7 +154,7 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
 
     class Meta:
         fields = ['offset'] + Value.Meta.fields
-        ro_fields = ['size', 'value'] + Value.Meta.ro_fields
+        ro_fields = ['field', 'size', 'value'] + Value.Meta.ro_fields
 
     def __init__(self, instance, field, offset, valid):
         super().__init__(offset)
@@ -226,12 +226,12 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
 
 
 class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
-    class Meta:
-        fields = ['description']
-
     class MetaBase(sch.NamedDict.MetaBase):
         aligned = True
         boundvalue_class = BoundValue
+
+        fields = ['description']
+        ro_fields = ['path']
 
     def __init__(self, *args, **kwargs):
         self._valid = kwargs.pop('valid', lambda _: None)
@@ -240,11 +240,13 @@ class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
     def pre_initialize(self, instance):
         return None
 
-    def initialize(self, instance, offset):
+    def initialize(self, instance, offset, path=None):
         if self.metaconf('aligned') and not offset.aligned():
             raise Exception('bit alignment not respected.')
         args = [instance, self, offset, self._valid]
         bv = self.metaconf('boundvalue_class')(*args)
+        if path is not None:
+            self._path = path
         self._set_data(instance, 'boundvalue', bv)
         return bv['size']
 
