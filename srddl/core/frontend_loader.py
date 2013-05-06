@@ -47,32 +47,15 @@ class Frontend(sch.MetaConf, metaclass=abc.ABCMeta):
 
 def load_frontends(argument_parser):
     main_root = os.path.join(os.path.dirname(__file__), 'frontends')
-    modules, frontends = [], dict()
+    frontends = []
 
-    # Finds all the front-ends that can be loaded.
-    for root, dirs, files in os.walk(main_root):
-        for filename in files:
-            if not filename.endswith('.py'):
-                continue
-            mod_name = root[len(main_root):].replace('/', '.') + filename[:-3]
-            try:
-                tmp = [root] + sys.path
-                modules.append((mod_name, imp.find_module(mod_name, tmp)))
-            except ImportError:
-                pass
-
-    modules = sorted(modules, key=lambda mod: mod[0])
-    for mod_name, (fd, pathname, description) in modules:
+    def sub(cls):
         try:
-            mod = imp.load_module(mod_name, fd, pathname, description)
-            for item in inspect.getmembers(mod):
-                if inspect.isclass(item[1]) and issubclass(item[1], Frontend):
-                    try:
-                        tmp = item[1]()
-                        tmp.frontend_init(argument_parser)
-                        frontends[tmp.metaconf('name')] = tmp
-                    except TypeError:
-                        pass
-        except ImportError:
+            tmp = cls()
+            tmp.frontend_init(argument_parser)
+            frontends[tmp.metaconf('name')] = tmp
+        except TypeError:
             pass
+    sch.class_loader(main_root, Frontend, sub)
+
     return frontends
