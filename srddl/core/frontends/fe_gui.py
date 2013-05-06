@@ -13,6 +13,7 @@ except ImportError:
 import srddl.core.fields as scf
 import srddl.core.frontend_loader as scfe
 import srddl.core.frontends.fe_common as scfc
+import srddl.core.ftdetect as scft
 import srddl.data as sd
 import srddl.models as sm
 
@@ -86,11 +87,11 @@ if GUI_ON:
     }
 
     class HexView(QtGui.QAbstractScrollArea):
-        def __init__(self, data, parent=None):
+        def __init__(self, parent=None):
             super().__init__(parent=parent)
 
             # Colors.
-            self.colors = scfc.HexViewColors()
+            self.colors, self._fu = scfc.HexViewColors(), False
 
             # Viewport configuration.
             self.viewport().setAttribute(QtCore.Qt.WidgetAttribute.WA_StaticContents)
@@ -99,11 +100,19 @@ if GUI_ON:
             self.viewport().setFocusPolicy(QtCore.Qt.WheelFocus)
 
             # Data view.
-            self._dv = sd.DataView(data)
+            self.set_data(None)
 
             # Font configuration.
             self.setFont(FONTS['monospace'])
-            self.setFixedWidth(550)
+
+        def set_data(self, data):
+            if data is None:
+                self._dv = None
+                self.setFixedWidth(16777215) # Find QWIDGETSIZE_MAX.
+            else:
+                self._dv, self._fu = sd.DataView(data), True
+            self._update_scrollbar()
+            self.viewport().repaint()
 
         @property
         def x(self):
@@ -115,6 +124,9 @@ if GUI_ON:
 
         def paintEvent(self, event):
             super().paintEvent(event)
+
+            if self._dv is None:
+                return
 
             line = self.y // self._line_height()
             for it, (addr, data) in enumerate(self._dv(line, self._lines() + 1).items()):
@@ -139,6 +151,9 @@ if GUI_ON:
                         y += self.print(it, y, b, **kwds)
                     y += 10
                 y += self.print(it, y - 10, '|', color='faded')
+            if self._fu:
+                self.setFixedWidth(y + 10)
+                self._fu = True
 
         def print(self, line, y, text, color=None, padding=2):
             painter = QtGui.QPainter(self.viewport())
@@ -164,6 +179,8 @@ if GUI_ON:
             self._update_scrollbar()
 
         def _update_scrollbar(self):
+            if self._dv is None:
+                return self.verticalScrollBar().setMaximum(0)
             height = self._line_height()
             maximum = self._dv.max_lines() * height - self.viewport().rect().height()
 
@@ -238,15 +255,23 @@ if GUI_ON:
                 )
                 super().__init__(value, [res], parent=parent)
 
-        def __init__(self, data, hexview, parent=None):
+        def __init__(self, hexview, parent=None):
             super().__init__(parent=parent)
-            self._data, self.hexview = data, hexview
+            self.hexview = hexview
 
             self.itemExpanded.connect(self._itemExpand_handler)
             self.itemCollapsed.connect(functools.partial(
                 self._itemExpand_handler, expand=False
             ))
+            self.set_data(None, None)
 
+        def set_data(self, ft, data):
+            if ft is None:
+                self.clear()
+                self.setVisible(False)
+                return
+
+            ft.setup(data)
             TREE = [
                 (list, 'list'),
                 (tuple, 'tuple'),
@@ -293,6 +318,10 @@ if GUI_ON:
                 if funcname is not None:
                     lcls[funcname](elem)
             _visit_tree(self.invisibleRootItem(), data.mapped)
+            self.setHeaderLabel('{name} - {abstract}'.format(
+                name=ft['name'], abstract=ft['abstract']
+            ))
+            self.setVisible(True)
 
         def _itemExpand_handler(self, item, expand=True):
             if isinstance(item, StructureTreeWidget.BoundValueTreeItem):
@@ -323,16 +352,19 @@ if GUI_ON:
             super().__init__()
 
             # General attributes.
-            self.data = sd.FileData('/usr/bin/cat')
-            import examples.elf; self.data.map(0, examples.elf.ElfN_Ehdr)
+            self.data, self.fts = None, scft.load_filetypes()
 
             # Window title.
             self.setWindowTitle('Welcome! - SRDDL')
 
             # Central widget.
-            layout, hexview = QtGui.QHBoxLayout(), HexView(self.data)
-            layout.addWidget(hexview)
-            layout.addWidget(StructureTreeWidget(self.data, hexview))
+            layout = QtGui.QHBoxLayout()
+
+            self.hexview = HexView()
+            self.structtree = StructureTreeWidget(self.hexview)
+
+            layout.addWidget(self.hexview)
+            layout.addWidget(self.structtree)
 
             widget = QtGui.QWidget()
             widget.setLayout(layout)
@@ -373,3 +405,45 @@ if GUI_ON:
 
         def _exit_act_triggered(self):
             self.close()
+
+        def _open_act_triggered(self):
+            kwds = dict(caption='Open Binary File')
+            filename = QtGui.QFileDialog.getOpenFileName(self, **kwds)[0]
+            if filename == '':
+                return
+            self.data = sd.FileData(filename)
+
+            filetypes = scft.filter_filetypes(self.fts, self.data)
+            filetypes = dict(('{} - {}'.format(a['name'], b), a)
+                             for a, b in filetypes)
+            if not filetypes:
+                ft = None
+            else:
+                fts = list(sorted(filetypes)) + ['Don\'t use any file type.']
+                args = [self, 'Bite', 'Chatte?', fts]
+                select, ok = QtGui.QInputDialog.getItem(*args, editable=False)
+                try:
+                    ft = filetypes[select]
+                except KeyError:
+                    ft = None
+
+            # Toggle menu button.
+            self._open_act.setEnabled(False)
+            self._save_act.setEnabled(True)
+            self._saveAs_act.setEnabled(True)
+            self._close_act.setEnabled(True)
+
+            self.hexview.set_data(self.data)
+            self.structtree.set_data(ft, self.data)
+
+        def _close_act_triggered(self):
+            self.data = None
+
+            # Toggle menu button.
+            self._open_act.setEnabled(True)
+            self._save_act.setEnabled(False)
+            self._saveAs_act.setEnabled(False)
+            self._close_act.setEnabled(False)
+
+            self.hexview.set_data(None)
+            self.structtree.set_data(None, None)
