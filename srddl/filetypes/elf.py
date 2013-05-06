@@ -1,12 +1,8 @@
-# This file only is here to help me gather what I want to have as an API from
-# the point of view of the user (writer of a template).
-
 # All values were found in /usr/bin/elf.h of my GNU/Linux distribution.
 
 import sys
 import functools
 
-import srddl.data as sd
 import srddl.exceptions as se
 import srddl.fields as sf
 import srddl.helpers as sh
@@ -228,8 +224,17 @@ class ElfN_Shdr(sm.Struct):
     sh_addralign = IntFieldN()
     sh_entsize = IntFieldN()
 
-if __name__ == '__main__':
-    prog = '/bin/ls' if len(sys.argv) == 1 else sys.argv[1]
 
-    f = sd.FileData(prog)
-    f.map(0, ElfN_Ehdr)
+class ELF(sm.FileType):
+    '''Executable and Linkable Format'''
+
+    class Meta:
+        author = 'Franck Michea'
+        author_email = 'franck.michea@gmail.com'
+        extensions = 'o,a,so'
+
+    def check(self, data):
+        return data.unpack_from('4s', 0)[0] == b'\x7fELF'
+
+    def setup(self, data):
+        data.map(0, ElfN_Ehdr)
