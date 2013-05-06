@@ -44,7 +44,11 @@ class Data:
                 yield (key, self.__getitem__(key))
 
     def __init__(self, buf, ro=False):
-        self.buf, self.ro, self.mapped = buf, ro, Data.MappedData()
+        self.ro, self.mapped, self.buf = ro, Data.MappedData(), buf
+
+        # If filename is not defined, default to None.
+        if not hasattr(self, 'filename'):
+            self.filename = None
 
         # Probably not foolproof...
         try: self.buf[0] = self.buf[0]
