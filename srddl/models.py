@@ -1,14 +1,18 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
+import abc
 import collections
 import functools
+import inspect
 
-import srddl.exceptions as se
+import srddl.core.exceptions as sce
+import srddl.core.helpers as sch
 import srddl.data as sd
+import srddl.exceptions as se
 
-from srddl.core.offset import Offset, Size
 from srddl.core.fields import AbstractField, FieldInitStatus
+from srddl.core.offset import Offset, Size
 
 class _SrddlInternal:
     '''
@@ -154,3 +158,77 @@ class Struct(metaclass=_MetaStruct):
         if name in self._srddl.namespace:
             return self._srddl.namespace[name].__set__(self, value)
         return super().__setattribute__(name, value)
+
+
+class FileType(sch.MetaConf, metaclass=abc.ABCMeta):
+    class MetaBase:
+        author_email = ''
+        extensions = ''
+        version = '[no version]'
+
+    def __init__(self):
+        self._attrs = ['name', 'author', 'author_email', 'version', 'abstract',
+                       'doc', 'extensions']
+
+    def check(self, data):
+        return False
+
+    @abc.abstractmethod
+    def setup(self, data):
+        pass
+
+    def sanity_check(self, errors_only=False):
+        res = ''
+        for attr in self._attrs:
+            try:
+                value = str(self[attr])
+                if errors_only:
+                    continue
+                res += '[OK] "{}" was found with value:'.format(attr)
+                if '\n' in value:
+                    res += '\n    '
+                else:
+                    res += ' '
+                res += value.replace('\n', '\n    ')
+                res += '\n'
+            except Exception as e:
+                res += '[FAIL] "{}" was not found, with error: {} ({})\n'.format(
+                    attr, str(e), e.__class__.__name__
+                )
+        return res[:-1]
+
+    def __getitem__(self, attr_name):
+        if attr_name in self._attrs:
+            try:
+                return getattr(self, '_{}'.format(attr_name))
+            except AttributeError:
+                return self.metaconf(attr_name)
+        raise KeyError(attr_name)
+
+    @property
+    def _extensions(self):
+        return list(set(self.metaconf('extensions').split(',')) - set(['']))
+
+    @property
+    def _doc(self):
+        res = inspect.getdoc(self)
+        if res is None:
+            raise AttributeError
+        return res
+
+    @property
+    def _name(self):
+        try:
+            return self.metaconf('name')
+        except sce.NoMetaConfError as e:
+            return self.__class__.__name__
+
+    @property
+    def _abstract(self):
+        try:
+            res = self._doc.splitlines()
+            if res[0] == '':
+                return res[1]
+            return res[0]
+        except IndexError:
+            raise AttributeError
