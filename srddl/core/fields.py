@@ -227,6 +227,9 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
             return self.value < other.value
         return self.value < other
 
+    def set(self, value):
+        self._field.encode(self._instance, self._offset, value)
+
 
 class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
     class MetaBase(sch.NamedDict.MetaBase):
