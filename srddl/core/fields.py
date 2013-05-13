@@ -248,7 +248,7 @@ class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
 
     def initialize(self, instance, offset, path=None):
         if self.metaconf('aligned') and not offset.aligned():
-            raise Exception('bit alignment not respected.')
+            raise se.FieldAlignmentError()
         args = [instance, self, offset, self._valid]
         bv = self.metaconf('boundvalue_class')(*args)
         if path is not None:

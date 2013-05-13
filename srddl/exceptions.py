@@ -68,6 +68,11 @@ class NotABoundValueError(Exception):
 
 # ----- Fields Exceptions ------------------------------------------------------
 
+class FieldAlignmentError(Exception):
+    def __str__(self):
+        return 'Bit alignment not respected.'
+
+
 class BifFieldSizeError(Exception):
     def __init__(self, size):
         self.size = size
