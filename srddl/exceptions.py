@@ -39,15 +39,6 @@ class NoFieldDataError(Exception):
                           struct=self.struct.__class__.__name__)
 
 
-class FieldNotReadyError(Exception):
-    def __init__(self, field):
-        self.field = field
-
-    def __str__(self):
-        res = 'The field {field} is not ready. You cannot read its value.'
-        return res.format(field=self.field.__class__.__name__)
-
-
 class InvalidReferenceError(Exception):
     def __init__(self, ref, reason, **kwds):
         self.ref, self.reason, self.kwds = ref, reason, kwds
@@ -67,6 +58,15 @@ class NotABoundValueError(Exception):
         return res.format(field=self.field)
 
 # ----- Fields Exceptions ------------------------------------------------------
+
+class FieldNotReadyError(Exception):
+    def __init__(self, field):
+        self.field = field
+
+    def __str__(self):
+        res = 'The field {field} is not ready. You cannot read its value.'
+        return res.format(field=self.field.__class__.__name__)
+
 
 class FieldAlignmentError(Exception):
     def __str__(self):
