@@ -47,7 +47,7 @@ class Frontend(sch.MetaConf, metaclass=abc.ABCMeta):
 
 def load_frontends(argument_parser):
     main_root = os.path.join(os.path.dirname(__file__), 'frontends')
-    frontends = []
+    frontends = dict()
 
     def sub(cls):
         try:
