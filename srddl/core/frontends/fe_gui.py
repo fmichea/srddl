@@ -352,7 +352,7 @@ if GUI_ON:
             super().__init__()
 
             # General attributes.
-            self.data, self.fts = None, scft.load_filetypes()
+            self.data, self.fts = None, scft.FileTypesLoader()
 
             # Window title.
             self.setWindowTitle('Welcome! - SRDDL')
@@ -413,7 +413,7 @@ if GUI_ON:
                 return
             self.data = sd.FileData(filename)
 
-            filetypes = scft.filter_filetypes(self.fts, self.data)
+            filetypes = self.fts.filter(self.data)
             filetypes = dict(('{} - {}'.format(a['name'], b), a)
                              for a, b in filetypes)
             if not filetypes:
