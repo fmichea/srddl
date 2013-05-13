@@ -119,7 +119,7 @@ class UnionField(AbstractContainerField):
             if issubclass(struct, Struct):
                 self.substructs[name] = kwargs.pop(name)
         if len(self.substructs) < 2:
-            raise Exception('not enough sub structures for UnionField.')
+            raise se.UnionFieldCountError()
         super().__init__(*args, **kwargs)
 
     def decode(self, instance, offset):
@@ -129,7 +129,7 @@ class UnionField(AbstractContainerField):
             if size is None:
                 size = res[name]['size']
             if res[name]['size'] != size:
-                raise Exception('Test.')
+                raise se.UnionFieldSizeError()
         return res
 
     class Meta:

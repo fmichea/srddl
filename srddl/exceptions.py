@@ -103,6 +103,16 @@ class SwitchFieldError(Exception):
         return res.format(val = self.val, swtch_fld = self.field)
 
 
+class UnionFieldCountError(Exception):
+    def __str__(self):
+        return 'Not enough sub-structures for UnionField.'
+
+
+class UnionFieldSizeError(Exception):
+    def __str__(self):
+        return 'Some strutures in the union have different sizes.'
+
+
 # ----- Struct Exceptions ------------------------------------------------------
 
 class AbstractStructError(Exception):
