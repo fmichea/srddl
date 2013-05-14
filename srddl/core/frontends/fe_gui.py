@@ -481,6 +481,6 @@ if GUI_ON:
 
         def _file_menus_toggle(self, enabled):
             self._open_act.setEnabled(enabled)
-            self._save_act.setEnabled(not enabled and not self.data.ro)
-            self._saveAs_act.setEnabled(not enabled and not self.data.ro)
+            self._save_act.setEnabled(not (enabled or self.data.ro))
+            self._saveAs_act.setEnabled(not (enabled or self.data.ro))
             self._close_act.setEnabled(not enabled)
