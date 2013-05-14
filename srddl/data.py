@@ -164,6 +164,9 @@ class DataView:
     def max_lines(self):
         return math.ceil(len(self._data) / (DataView.COLUMN_SIZE * self._columns))
 
+    def flush(self):
+        pass
+
 
 class FileData(Data):
     Mode = sch.enum(
@@ -179,5 +182,9 @@ class FileData(Data):
         return os.path.getsize(self.filename)
 
     def close(self):
+        self.flush()
         self.buf.close()
         self.f.close()
+
+    def flush(self):
+        self.buf.flush()

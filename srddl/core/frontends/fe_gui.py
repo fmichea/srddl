@@ -470,6 +470,9 @@ if GUI_ON:
             self.hexview.set_data(self.data)
             self.structtree.set_data(ft, self.data)
 
+        def _save_act_triggered(self):
+            self.data.flush()
+
         def _close_act_triggered(self):
             self.data = None
             self._file_menus_toggle(True)
