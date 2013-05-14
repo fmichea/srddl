@@ -348,6 +348,51 @@ if GUI_ON:
                 self.hexview.viewport().repaint()
 
 
+    class FileOpenerOptions(QtGui.QDialog):
+        def __init__(self, filetypes, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.setWindowTitle('File options')
+
+            # First transform file types.
+            title = lambda ft, reason: '{} - {}'.format(ft['name'], reason)
+            self._filetypes = dict((title(a, b), a) for a, b in filetypes)
+
+            # Main layout: vertical box.
+            self._main_layout = QtGui.QVBoxLayout()
+
+            # Creating the form.
+            self._form_groupBox = QtGui.QGroupBox('File Information')
+            self._form_layout = QtGui.QFormLayout(parent=self)
+            ## File detection selection for decoder.
+            self._ft_decoder = QtGui.QComboBox()
+            self._ft_decoder.setEditable(False)
+            tmp = list(sorted(self._filetypes))
+            tmp.append('Don\'t use any file decoder.')
+            self._ft_decoder.addItems(tmp)
+            self._form_layout.addRow('File type decoder:', self._ft_decoder)
+            ## Other options.
+            self._ro_option = QtGui.QCheckBox()
+            self._form_layout.addRow('Open read-only:', self._ro_option)
+            self._form_groupBox.setLayout(self._form_layout)
+            self._main_layout.addWidget(self._form_groupBox)
+
+            # Buttons to accept/cancel menu.
+            tmp = QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
+            self._button_box = QtGui.QDialogButtonBox(tmp)
+            self._button_box.accepted.connect(self.accept)
+            self._button_box.rejected.connect(self.reject)
+            self._main_layout.addWidget(self._button_box)
+
+            self.setLayout(self._main_layout)
+
+        def chosen_ft(self):
+            text = self._ft_decoder.itemText(self._ft_decoder.currentIndex())
+            return self._filetypes.get(text)
+
+        def chosen_ro(self):
+            return self._ro_option.checkState() == QtCore.Qt.Checked
+
+
     class MainWindow(QtGui.QMainWindow):
         def __init__(self):
             super().__init__()
@@ -414,19 +459,12 @@ if GUI_ON:
                 return
             self.data = sd.FileData(filename)
 
-            filetypes = self.fts.filter(self.data)
-            filetypes = dict(('{} - {}'.format(a['name'], b), a)
-                             for a, b in filetypes)
-            if not filetypes:
-                ft = None
-            else:
-                fts = list(sorted(filetypes)) + ['Don\'t use any file type.']
-                args = [self, 'Bite', 'Chatte?', fts]
-                select, ok = QtGui.QInputDialog.getItem(*args, editable=False)
-                try:
-                    ft = filetypes[select]
-                except KeyError:
-                    ft = None
+            options = FileOpenerOptions(self.fts.filter(self.data))
+            options.exec_()
+
+            if not options.chosen_ro():
+                self.data = sd.FileData(filename, mode=sd.FileData.Mode.RDWR)
+            ft = options.chosen_ft()
 
             self._file_menus_toggle(False)
             self.hexview.set_data(self.data)
@@ -440,6 +478,6 @@ if GUI_ON:
 
         def _file_menus_toggle(self, enabled):
             self._open_act.setEnabled(enabled)
-            self._save_act.setEnabled(not enabled)
-            self._saveAs_act.setEnabled(not enabled)
+            self._save_act.setEnabled(not enabled and not self.data.ro)
+            self._saveAs_act.setEnabled(not enabled and not self.data.ro)
             self._close_act.setEnabled(not enabled)
