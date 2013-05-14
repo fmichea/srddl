@@ -427,23 +427,18 @@ if GUI_ON:
                 except KeyError:
                     ft = None
 
-            # Toggle menu button.
-            self._open_act.setEnabled(False)
-            self._save_act.setEnabled(True)
-            self._saveAs_act.setEnabled(True)
-            self._close_act.setEnabled(True)
-
+            self._file_menus_toggle(False)
             self.hexview.set_data(self.data)
             self.structtree.set_data(ft, self.data)
 
         def _close_act_triggered(self):
             self.data = None
-
-            # Toggle menu button.
-            self._open_act.setEnabled(True)
-            self._save_act.setEnabled(False)
-            self._saveAs_act.setEnabled(False)
-            self._close_act.setEnabled(False)
-
+            self._file_menus_toggle(True)
             self.hexview.set_data(None)
             self.structtree.set_data(None, None)
+
+        def _file_menus_toggle(self, enabled):
+            self._open_act.setEnabled(enabled)
+            self._save_act.setEnabled(not enabled)
+            self._saveAs_act.setEnabled(not enabled)
+            self._close_act.setEnabled(not enabled)
