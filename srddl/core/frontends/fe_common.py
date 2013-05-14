@@ -42,6 +42,9 @@ class HexViewColors:
 
         return (cur, pos)
 
+    def empty(self):
+        self.ocolors.clear()
+
     def gap_color(self, offset):
         cur, pos = self.color(offset)
         if pos in [HexViewColors.pos.BEGIN, HexViewColors.pos.MIDDLE]:

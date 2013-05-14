@@ -109,6 +109,7 @@ if GUI_ON:
             if data is None:
                 self._dv = None
                 self.setFixedWidth(16777215) # Find QWIDGETSIZE_MAX.
+                self.colors.empty()
             else:
                 self._dv, self._fu = sd.DataView(data), True
             self._update_scrollbar()
