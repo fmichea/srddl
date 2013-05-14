@@ -46,9 +46,8 @@ class Frontend(sch.MetaConf, metaclass=abc.ABCMeta):
         '''This method is called when the front-end is selected.'''
 
 def load_frontends(argument_parser):
-    main_root = os.path.join(os.path.dirname(__file__), 'frontends')
     frontends = dict()
-
+    main_root = os.path.join(os.path.dirname(__file__), 'frontends')
     def sub(cls):
         try:
             tmp = cls()
@@ -57,5 +56,4 @@ def load_frontends(argument_parser):
         except TypeError:
             pass
     sch.class_loader(main_root, Frontend, sub)
-
     return frontends

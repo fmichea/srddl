@@ -5,9 +5,8 @@ import srddl.models as sm
 
 class FileTypesLoader:
     def __init__(self):
-        main_root = os.path.join(os.path.dirname(__file__), '..', 'filetypes')
-
         self.fts = dict()
+        main_root = os.path.join(os.path.dirname(__file__), '..', 'filetypes')
         def sub(cls):
             try:
                 tmp = cls()
@@ -20,7 +19,6 @@ class FileTypesLoader:
 
     def filter(self, data):
         possibilities = set()
-
         for ft in self.fts.values():
             for ext in ft['extensions']:
                 if data.filename.endswith('.{}'.format(ext)):
