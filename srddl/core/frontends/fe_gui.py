@@ -137,7 +137,7 @@ if GUI_ON:
                 for d in data['data']:
                     y += 15
                     for b in d:
-                        color = self.colors.color(cur_offset)[0]
+                        color = self.colors.color(cur_offset)
                         y += self.print(it, y, b, color=color)
                         cur_offset += 1
 
@@ -156,7 +156,12 @@ if GUI_ON:
                 self.setFixedWidth(y + 10)
                 self._fu = True
 
-        def print(self, line, y, text, color=None, padding=2):
+        def print(self, line, y, text, color=None, padding=3):
+            if color is not None:
+                if isinstance(color, tuple):
+                    color, pos = color
+                else:
+                    color, pos = color, -1
             painter = QtGui.QPainter(self.viewport())
 
             width = painter.fontMetrics().width(text) + padding * 2
@@ -165,13 +170,26 @@ if GUI_ON:
             # Rectangle in which text will be drawn.
             rect = QtCore.QRectF(y, line * height, width, height)
             rect = rect.translated(0, -(self.y % self._line_height()))
+            textRect = QtCore.QRectF(rect)
 
             if color is not None and (color + '#fg') in COLORS:
                 painter.setPen(COLORS[color + '#fg'])
 
             if color is not None and (color + '#bg') in COLORS:
-                painter.fillRect(rect, COLORS[color + '#bg'])
-            painter.drawText(rect, QtCore.Qt.AlignCenter, text)
+                if (color + '#fg') in COLORS:
+                    painter.fillRect(rect, COLORS[color + '#fg'])
+                    rect.setHeight(rect.height() - 2)
+                    rect.setY(rect.y() + 1)
+                    if pos in (scfc.HexViewColors.pos.BOTH_ENDS,
+                               scfc.HexViewColors.pos.BEGIN):
+                        rect.setX(rect.x() + 1)
+                    if pos in (scfc.HexViewColors.pos.BOTH_ENDS,
+                               scfc.HexViewColors.pos.END):
+                        rect.setWidth(rect.width() - 1)
+                    painter.fillRect(rect, COLORS[color + '#bg'])
+                else:
+                    painter.fillRect(rect, COLORS[color + '#bg'])
+            painter.drawText(textRect, QtCore.Qt.AlignCenter, text)
 
             return width
 
@@ -281,7 +299,7 @@ if GUI_ON:
                 (scf.BoundValue, 'boundvalue'),
                 (scf.Value, 'value'),
             ]
-            def _visit_tree(root, elem, indent=0):
+            def _visit_tree(root, elem):
                 def _visit_func_getter(elem):
                     for tmp in TREE:
                         t, funcname = tmp
@@ -306,7 +324,7 @@ if GUI_ON:
                     colors = itertools.cycle(['c{}'.format(i) for i in range(1, 8)])
                     for field_name in struct['fields']:
                         field = getattr(struct, field_name)
-                        _visit_tree(item, (field, next(colors)), indent=indent+1)
+                        _visit_tree(item, (field, next(colors)))
                     root.addChild(item)
                 def _visit_boundvalue(tmp):
                     bv, color = tmp

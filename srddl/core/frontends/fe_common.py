@@ -36,9 +36,9 @@ class HexViewColors:
             if pos is None:
                 pos = HexViewColors.pos.END
             else:
-                pos = HexViewColors.pos.BOTH_ENDS
+                pos = HexViewColors.pos.MIDDLE
         if cur is not None and pos is None:
-            pos = HexViewColors.pos.MIDDLE
+            pos = HexViewColors.pos.BOTH_ENDS
 
         return (cur, pos)
 
