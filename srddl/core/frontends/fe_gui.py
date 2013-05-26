@@ -61,26 +61,26 @@ if GUI_ON:
         }),
     ])
 
-    COLORS = {
-        'addr#bg': QtGui.QColor(240, 240, 240),
-        'faded#fg': QtGui.QColor(200, 200, 200),
+    def _greyscale_color(color):
+        c = int(0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue())
+        return QtGui.QColor(c, c, c)
+
+    COLORS = scfc.ColorManager([
+        scfc.Color('addr', bg=(240, 240, 240)),
+        scfc.Color('faded', fg=(200, 200, 200)),
 
         # Colors used to recognize the fields.
-        'c1#fg': QtGui.QColor(15, 9, 44),
-        'c1#bg': QtGui.QColor(149, 251, 255),
-        'c2#fg': QtGui.QColor(7, 18, 47),
-        'c2#bg': QtGui.QColor(255, 175, 221),
-        'c3#fg': QtGui.QColor(79, 5, 0),
-        'c3#bg': QtGui.QColor(165, 213, 62),
-        'c4#fg': QtGui.QColor(0, 0, 0),
-        'c4#bg': QtGui.QColor(249, 255, 37),
-        'c5#fg': QtGui.QColor(82, 57, 21),
-        'c5#bg': QtGui.QColor(141, 255, 206),
-        'c6#fg': QtGui.QColor(165, 212, 62),
-        'c6#bg': QtGui.QColor(61, 9, 5),
-        'c7#fg': QtGui.QColor(38, 8, 29),
-        'c7#bg': QtGui.QColor(255, 175, 0),
-    }
+        scfc.Color('c1', fg=(15, 9, 44), bg=(149, 251, 255)),
+        scfc.Color('c2', fg=(7, 18, 47), bg=(255, 175, 221)),
+        scfc.Color('c3', fg=(79, 5, 0), bg=(165, 213, 62)),
+        scfc.Color('c4', fg=(0, 0, 0), bg=(249, 255, 37)),
+        scfc.Color('c5', fg=(82, 57, 21), bg=(141, 255, 206)),
+        scfc.Color('c6', fg=(165, 212, 62), bg=(61, 9, 5)),
+        scfc.Color('c7', fg=(38, 8, 29), bg=(255, 175, 0)),
+    ], tf=lambda c: QtGui.QColor(*c), properties=[
+        ('lighter', lambda c: c.lighter()),
+        ('greyscale', _greyscale_color),
+    ])
 
     FONTS = {
         'monospace': QtGui.QFont("DejaVu Sans Mono"),
@@ -91,7 +91,8 @@ if GUI_ON:
             super().__init__(parent=parent)
 
             # Colors.
-            self.colors, self._fu = scfc.HexViewColors(), False
+            self.colors = scfc.HexViewColors()
+            self._fu = False
 
             # Viewport configuration.
             self.viewport().setAttribute(QtCore.Qt.WidgetAttribute.WA_StaticContents)
@@ -161,7 +162,7 @@ if GUI_ON:
                 if isinstance(color, tuple):
                     color, pos = color
                 else:
-                    color, pos = color, -1
+                    color, pos = COLORS.color(color), -1
             painter = QtGui.QPainter(self.viewport())
 
             width = painter.fontMetrics().width(text) + padding * 2
@@ -172,12 +173,14 @@ if GUI_ON:
             rect = rect.translated(0, -(self.y % self._line_height()))
             textRect = QtCore.QRectF(rect)
 
-            if color is not None and (color + '#fg') in COLORS:
-                painter.setPen(COLORS[color + '#fg'])
+            fg = COLORS.color2obj(color, 'fg', raises=False)
+            if fg is not None:
+                painter.setPen(fg)
 
-            if color is not None and (color + '#bg') in COLORS:
-                if (color + '#fg') in COLORS:
-                    painter.fillRect(rect, COLORS[color + '#fg'])
+            bg = COLORS.color2obj(color, 'bg', raises=False)
+            if bg is not None:
+                if fg is not None:
+                    painter.fillRect(rect, fg)
                     rect.setHeight(rect.height() - 2)
                     rect.setY(rect.y() + 1)
                     if pos in (scfc.HexViewColors.pos.BOTH_ENDS,
@@ -186,9 +189,9 @@ if GUI_ON:
                     if pos in (scfc.HexViewColors.pos.BOTH_ENDS,
                                scfc.HexViewColors.pos.END):
                         rect.setWidth(rect.width() - 1)
-                    painter.fillRect(rect, COLORS[color + '#bg'])
+                    painter.fillRect(rect, bg)
                 else:
-                    painter.fillRect(rect, COLORS[color + '#bg'])
+                    painter.fillRect(rect, bg)
             painter.drawText(textRect, QtCore.Qt.AlignCenter, text)
 
             return width
@@ -218,10 +221,11 @@ if GUI_ON:
             def __init__(self, color):
                 width, height = 35, 20
                 try:
+                    func = COLORS.color2obj
                     img = QtGui.QImage(width, height, QtGui.QImage.Format_ARGB32)
                     painter = QtGui.QPainter(img)
-                    painter.fillRect(0, 0, width, height, COLORS[color + '#fg'])
-                    painter.fillRect(1, 1, width - 2, height - 2, COLORS[color + '#bg'])
+                    painter.fillRect(0, 0, width, height, func(color, 'fg'))
+                    painter.fillRect(1, 1, width - 2, height - 2, func(color, 'bg'))
                 finally:
                     painter.end()
                 super().__init__(QtGui.QPixmap(img))
@@ -282,6 +286,7 @@ if GUI_ON:
             self.itemCollapsed.connect(functools.partial(
                 self._itemExpand_handler, expand=False
             ))
+            self.itemClicked.connect(self._itemClicked_handler)
             self.set_data(None, None)
 
         def set_data(self, ft, data):
@@ -321,16 +326,19 @@ if GUI_ON:
                         _visit_tree(root, l)
                 def _visit_struct(struct):
                     item = StructureTreeWidget.StructTreeItem(struct)
+                    root.addChild(item)
                     colors = itertools.cycle(['c{}'.format(i) for i in range(1, 8)])
                     for field_name in struct['fields']:
                         field = getattr(struct, field_name)
-                        _visit_tree(item, (field, next(colors)))
-                    root.addChild(item)
+                        _visit_tree(item, (field, next(colors), self.hexview.colors))
                 def _visit_boundvalue(tmp):
-                    bv, color = tmp
+                    bv, color, hcolors = tmp
+                    color = COLORS.color(color)
                     item = StructureTreeWidget.BoundValueTreeItem(bv, color)
-                    _visit_tree(item, bv['value'])
                     root.addChild(item)
+                    hcolors.add_color(bv['offset'], bv['size'],
+                                      self._item_level(item), color)
+                    _visit_tree(item, bv['value'])
                 def _visit_value(value):
                     root.addChild(StructureTreeWidget.ValueTreeItem(value))
                 lcls, funcname = locals(), _visit_func_getter(elem)
@@ -347,23 +355,31 @@ if GUI_ON:
                 if item.childCount() == 1:
                     item.child(0).setExpanded(expand)
             if isinstance(item, StructureTreeWidget.StructTreeItem):
-                if expand:
-                    func = self.hexview.colors.colorize
-                else:
-                    func = self.hexview.colors.clear
                 def _apply_func_to_tree(item):
-                    level, parent = 0, item.parent()
-                    while parent:
-                        parent, level = parent.parent(), level + 1
+                    level = self._item_level(item)
+                    #print('Elem: ', repr(item.elem), '- level:', level, flush=True)
                     for it_nb in range(item.childCount()):
                         it = item.child(it_nb)
                         if isinstance(it, StructureTreeWidget.BoundValueTreeItem):
-                            off, sz = it.elem['offset'].byte, it.elem['size'].byte
-                            func(off, sz, level, it.color)
+                            it.color.toggle_property(True, 'enabled')
                         if it.isExpanded():
                             _apply_func_to_tree(it)
                 _apply_func_to_tree(item)
                 self.hexview.viewport().repaint()
+
+        def _itemClicked_handler(self, item, column):
+            self.hexview.colors.set_property(-1, -1, -1, 'greyscale', True)
+            if isinstance(item.elem, (sm.Struct, scf.BoundValue)):
+                l = self._item_level(item)
+                args = [item.elem['offset'], item.elem['size'], l, 'greyscale', False]
+                self.hexview.colors.set_property(*args)
+            self.hexview.viewport().repaint()
+
+        def _item_level(self, item):
+            level, parent = 0, item.parent()
+            while parent:
+                parent, level = parent.parent(), level + 1
+            return level
 
 
     class FileOpenerOptions(QtGui.QDialog):
