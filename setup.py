@@ -1,9 +1,16 @@
+import sys
 try:
     from setuptools import setup, find_packages
 except ImportError:
     import distribute_setup
     distribute_setup.use_setuptools()
     from setuptools import setup, find_packages
+
+if sys.version_info[0] != 3:
+    msg = 'srddl is intended to be used with python 3 only (it uses specific '
+    msg += 'features).\nMinimum version is not known yet, but this code was '
+    msg += 'tested for python 3.3 at least (released September 29, 2012).'
+    sys.exit(msg)
 
 setup(
     # General information.
