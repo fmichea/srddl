@@ -70,6 +70,7 @@ class NamedDict(MetaConf):
     class MetaBase:
         fields = []
         ro_fields = []
+        optional = []
 
     def __init__(self, *args, **kwargs):
         '''
@@ -90,9 +91,11 @@ class NamedDict(MetaConf):
         if attr_name not in lst:
             raise KeyError
         try:
-            return getattr(self, '_{}'.format(attr_name), None)
+            return getattr(self, '_{}'.format(attr_name))
         except AttributeError:
-            raise KeyError
+            if attr_name in self.metaconf('optional'):
+                return None
+        raise sce.NamedDictPropertyError(self.__class__, attr_name)
 
     def __setitem__(self, attr_name, value):
         if attr_name not in self.metaconf('fields'):

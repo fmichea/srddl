@@ -12,6 +12,16 @@ class NoMetaConfError(Exception):
         res = 'Configuration for "{name}" key was not found for class {klss}.'
         return res.format(name = self.name, klss = self.klass.__name__)
 
+
+class NamedDictPropertyError(Exception):
+    def __init__(self, klass, prop):
+        self.klass, self.prop = klass, prop
+
+    def __str__(self):
+        res = 'Property {prop} in class {klass} was not implemented.'
+        return res.format(klass=self.klass, prop=self.prop)
+
+
 # ----- File types loader ------------------------------------------------------
 
 class FileTypeNameError(Exception):

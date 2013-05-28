@@ -123,6 +123,7 @@ class Value(sch.NamedDict):
     class Meta:
         fields = ['value', 'name', 'description']
         ro_fields = ['display_value']
+        optional = ['description']
 
     def __repr__(self):
         return '<Value at {:#x} with value {}>'.format(
