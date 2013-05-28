@@ -1,3 +1,4 @@
+import srddl.data as sd
 import srddl.models as sm
 import srddl.fields as sf
 
@@ -29,7 +30,7 @@ class E(sm.Struct):
     length = sf.IntField()
 
 data = '2adeadbeefefbeadde424344450001020304050607080900002a2b00000000000004'
-data = bytearray.fromhex(data)
+data = sd.Data(bytearray.fromhex(data))
 
 a = A(data, 0)
 
@@ -42,10 +43,10 @@ for i in range(4):
 
 assert(a.a_fifth == bytearray.fromhex('00010203040506070809'))
 assert(a.a_seventh == 0x2b2a)
-assert(a.size == 34)
+assert(a['size'] == 34)
 assert(a.a_eigth == 4)
 
-data = bytearray.fromhex('0242434445')
+data = sd.Data(bytearray.fromhex('0242434445'))
 
 c = C(data, 0)
 
