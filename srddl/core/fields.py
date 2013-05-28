@@ -2,6 +2,7 @@
 # License: New BSD License (See LICENSE)
 
 import abc
+import binascii
 import functools
 import inspect
 import pprint
@@ -136,8 +137,19 @@ class Value(sch.NamedDict):
         return res
 
 
+class AbstractMappedValue(Value, metaclass=_MetaAbstractDescriptor):
+    class Meta(Value.Meta):
+        fields = ['offset'] + Value.Meta.fields
+        ro_fields = ['size', 'hex'] + Value.Meta.ro_fields
+
+    def __repr__(self):
+        return '<MappedValue at {:#x} with value {}>'.format(
+            id(self), self['value']
+        )
+
+
 @functools.total_ordering
-class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
+class BoundValue(AbstractMappedValue):
     '''
     The BoundValue class represents a value obtained by fetching a Field. Each
     field may define and return a specialized version of the BoundValue,
@@ -152,9 +164,8 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     anyway.
     '''
 
-    class Meta:
-        fields = ['offset'] + Value.Meta.fields
-        ro_fields = ['field', 'size', 'value'] + Value.Meta.ro_fields
+    class Meta(AbstractMappedValue.Meta):
+        ro_fields = ['field'] + AbstractMappedValue.Meta.ro_fields
 
     def __init__(self, instance, field, offset, valid):
         super().__init__(offset)
@@ -199,6 +210,12 @@ class BoundValue(Value, metaclass=_MetaAbstractDescriptor):
     @property
     def _valid(self):
         return self._valid_func(self._value)
+
+    @property
+    def _hex(self):
+        f = '{}s'.format(self._size.byte)
+        d = self._instance['data'].unpack_from(f, self._offset.byte)[0]
+        return binascii.hexlify(d)
 
     @property
     def _display_value(self):

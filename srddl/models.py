@@ -11,18 +11,21 @@ import srddl.core.helpers as sch
 import srddl.data as sd
 import srddl.exceptions as se
 
-from srddl.core.fields import AbstractField, FieldInitStatus
+from srddl.core.fields import AbstractMappedValue, AbstractField, FieldInitStatus
 from srddl.core.offset import Offset, Size
 
-class _SrddlInternal:
+class _SrddlInternal(AbstractMappedValue):
     '''
     This class is used to create one instance per structure and permit srddl
     to add as much fields as it wants without being too intrusive of the
     structure.
     '''
 
+    class Meta(AbstractMappedValue.Meta):
+        ro_fields = ['data', 'fields'] + AbstractMappedValue.Meta.ro_fields
+
     def __init__(self, instance, data, offset):
-        self.instance, self.data, self.offset = instance, data, Offset(offset)
+        self.instance, self._data, self._offset = instance, data, Offset(offset)
 
         # Some meta data on fields.
         self.fields_data = dict()
@@ -37,26 +40,33 @@ class _SrddlInternal:
 
     def map_struct(self):
         cur_offset = Offset()
-        for field_name in self.fields:
+        for field_name in self._fields:
             field = self.namespace[field_name]
             while True:
                 field_pi = field.pre_initialize(self.instance)
                 if field_pi is None:
                     break
                 field, self.namespace[field_name] = field_pi, field_pi
-            field.initialize(self.instance, self.offset + cur_offset,
-                             path=field_name)
+            off = self._offset + cur_offset
+            field.initialize(self.instance, off, path=field_name)
             cur_offset += field.__get__(self.instance)['size']
-        self.size = Size(cur_offset)
+        self._size = Size(cur_offset)
 
     @property
-    def fields(self):
+    def _fields(self):
         lst = list(self.namespace.keys())
-        for key, new in self.instance._pre_mapping(self.data, lst):
+        for key, new in self.instance._pre_mapping(self._data, lst):
             if -1 < new < len(lst):
                 del lst[lst.index(key)]
                 lst.insert(new, key)
         return lst
+
+    @property
+    def _hex(self):
+        res = b''
+        for field_name in self._fields:
+            res += self.namespace[field_name].__get__(self.instance)['hex']
+        return res
 
 
 class _MetaStruct(type):
@@ -117,10 +127,7 @@ class Struct(metaclass=_MetaStruct):
         return res
 
     def __getitem__(self, item):
-        properties = ['offset', 'size', 'data', 'fields']
-        if item not in properties:
-            raise KeyError(item)
-        return getattr(self._srddl, item)
+        return self._srddl[item]
 
     def _setup(self, data):
         '''
