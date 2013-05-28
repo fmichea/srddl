@@ -63,9 +63,19 @@ class _SrddlInternal(AbstractMappedValue):
 
     @property
     def _hex(self):
-        res = b''
+        return self._apply_all(b'', 'hex')
+
+    @property
+    def _value(self):
+        return self._apply_all([], 'value', fn=lambda x: [x])
+
+    @property
+    def _description(self):
+        return inspect.getdoc(self.instance.__class__) or ''
+
+    def _apply_all(self, res, item, fn=lambda x: x):
         for field_name in self._fields:
-            res += self.namespace[field_name].__get__(self.instance)['hex']
+            res += fn(self.namespace[field_name].__get__(self.instance)[item])
         return res
 
 
