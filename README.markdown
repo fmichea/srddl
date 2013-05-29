@@ -40,6 +40,9 @@ usage of srddl:
     # data size is not affected yet (in TODO).
     # example: a.length = 5 # changes the first byte to 5 instead of 10.
 
+You can find some more examples in `examples/` directory and a more complete
+file decoder in `srddl/filetypes/` directory.
+
 Features
 --------
 
