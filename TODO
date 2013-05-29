@@ -1,0 +1,47 @@
+TODO list of features to add
+============================
+
+Some of those points where given a try, but where removed because they were
+ineffective or too slow. Before taking one of those points, you can ask devs
+what is the state of the point, but contributions are welcomed :)
+
+If you have an idea that would enhance srddl, you can also add an issue on
+bitbucket and it will be considered. If it is accepted, it will be added here
+and implemented.
+
+General TODOs
+-------------
+
+ - performance: Enhance performance of the whole thing. Some leads are to check
+                algorithm, to avoid useless wrapping of some things (if we can
+                say so), or adding __slots__ to a lot of things via metaclasses.
+ - documentation: Add some sphinx documentation about general usage of srddl and
+                  also the code (with docstrings).
+ - testing: Add some more-complete tests. Add some tests on things not correctly
+            done right now, like if the data is not long enough, etc. This will
+            foster adding more features.
+
+Core structure declaration
+--------------------------
+
+ - fields: Add more standard fields. Here is a list of ideas:
+    * Reference field (OffsetField that describes a struct somewhere else, etc)
+    * Checksum fields (CRC, ...)
+ - structures: Add the possibility to do pattern matching, to search something
+               in some data. Say, this first must be 2, this third field must
+               respect this function, ...
+ - structures: Add some automatic reference dependency. When an array depends on
+               another field of the struct for its size for example, it would be
+               awesome to have the array updated if the size is modified.
+ - structures, fields: Add 'static' properties, to separate the need of an
+                       instance and the possibilty to answer even without it.
+
+Frontends
+---------
+
+ - shell: Add a shell front-end, to toy easily with a file or some data, use
+          file decoders etc.
+
+ - GUI: Add a way to edit the file in the hex view.
+ - GUI: Add a way to edit fields directly. It would be awesome to be able to be
+        able to select options available per field to manipulate this edit form.
