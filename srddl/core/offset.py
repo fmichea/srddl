@@ -3,10 +3,11 @@
 # License: New BSD License (See LICENSE)
 
 import functools
+import abc
 
 
 @functools.total_ordering
-class _Offset:
+class _Offset(metaclass=abc.ABCMeta):
     def __init__(self, byte=0, bit=0):
         from srddl.core.fields import BoundValue
         if isinstance(byte, BoundValue):
@@ -76,6 +77,16 @@ class _Offset:
     def aligned(self):
         return (self.bit == 0)
 
+    @abc.abstractmethod
+    def rounded(self):
+        pass
 
-class Offset(_Offset): pass
-class Size(_Offset): pass
+
+class Offset(_Offset):
+    def rounded(self):
+        return self.byte
+
+
+class Size(_Offset):
+    def rounded(self):
+        return self.byte + (1 if self.bit else 0)
