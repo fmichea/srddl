@@ -8,6 +8,8 @@ README of srddl
 - Current state: Unpacking structures, see examples in `examples/` directory.
 - Goal: Templated hexadecimal editor, to enhance working with binary files.
 
+All current ideas are put in the TODO file. Check the sources!
+
 Examples
 --------
 
