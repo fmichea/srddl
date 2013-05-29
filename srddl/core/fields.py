@@ -256,6 +256,7 @@ class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
 
         fields = ['description']
         ro_fields = ['path']
+        optional = ['description']
 
     def __init__(self, *args, **kwargs):
         self._valid = kwargs.pop('valid', lambda _: None)
