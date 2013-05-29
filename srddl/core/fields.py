@@ -148,6 +148,18 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractDescriptor):
             id(self), self['value']
         )
 
+    def _hexify(self, data):
+        # Unpack the complete data.
+        f = '{}s'.format(self._size.rounded())
+        d = bytearray(data.unpack_from(f, self._offset.rounded())[0])
+        # Remove starting bits not included in the mapped value.
+        d[0] = d[0] & ((0xff >> self._offset.bit) & 0xff)
+        # Remove trailing bits not included in the mapped value.
+        s = self._size.bit + (self._offset.bit if not self._size.byte else 0)
+        d[-1] = d[-1] & ((0xff << (8 - s if s else 0)) & 0xff)
+        # Hexify, we are done!
+        return binascii.hexlify(d)
+
 
 @functools.total_ordering
 class BoundValue(AbstractMappedValue):
@@ -193,6 +205,10 @@ class BoundValue(AbstractMappedValue):
         return super().__getitem__(item)
 
     @property
+    def _hex(self):
+        return self._hexify(self._instance['data'])
+
+    @property
     def _size(self):
         return Size(byte=sch.reference_value(self._instance, self._field._size))
 
@@ -211,12 +227,6 @@ class BoundValue(AbstractMappedValue):
     @property
     def _valid(self):
         return self._valid_func(self._value)
-
-    @property
-    def _hex(self):
-        f = '{}s'.format(self._size.byte)
-        d = self._instance['data'].unpack_from(f, self._offset.byte)[0]
-        return binascii.hexlify(d)
 
     @property
     def _display_value(self):

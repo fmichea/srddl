@@ -22,3 +22,17 @@ def test_bitfield_ok():
     assert(foo.bar2 == 0b1010)
     assert(foo.bar3 == 0b01)
     assert(foo.bar4 == 0x42)
+
+def test_bitfield_hex():
+    class Foo(sm.Struct):
+        bar1 = sf.BitField(2)
+        bar2 = sf.BitField(4)
+        bar3 = sf.BitField(2)
+        bar4 = sf.IntField()
+    foo = Foo(sd.Data(bytes.fromhex('a942')), 0)
+
+    assert(foo['hex'] == b'a942')
+    assert(foo.bar1['hex'] == b'80')
+    assert(foo.bar2['hex'] == b'28')
+    assert(foo.bar3['hex'] == b'01')
+    assert(foo.bar4['hex'] == b'42')

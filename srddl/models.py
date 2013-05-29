@@ -63,7 +63,7 @@ class _SrddlInternal(AbstractMappedValue):
 
     @property
     def _hex(self):
-        return self._apply_all(b'', 'hex')
+        return self._hexify(self._data)
 
     @property
     def _value(self):
