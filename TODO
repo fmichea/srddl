@@ -20,6 +20,8 @@ General TODOs
  - testing: Add some more-complete tests. Add some tests on things not correctly
             done right now, like if the data is not long enough, etc. This will
             foster adding more features.
+ - file types: Add more decoders, only ELF is implemented, and not completly
+               documented...
 
 Core structure declaration
 --------------------------
@@ -35,6 +37,11 @@ Core structure declaration
                awesome to have the array updated if the size is modified.
  - structures, fields: Add 'static' properties, to separate the need of an
                        instance and the possibilty to answer even without it.
+ - structures, data: Add a layout for structure placement and an infinite data
+                     type to be able to craft data "on-the-fly".
+ - data: Add the possibility to insert in the data, instead of the default
+         overriding usage.
+ - file data: Add some way to rename correctly the file associated with the map.
 
 Frontends
 ---------
@@ -42,6 +49,14 @@ Frontends
  - shell: Add a shell front-end, to toy easily with a file or some data, use
           file decoders etc.
 
- - GUI: Add a way to edit the file in the hex view.
+ - GUI: Add a way to edit the file in the hex view, with selection etc.
  - GUI: Add a way to edit fields directly. It would be awesome to be able to be
         able to select options available per field to manipulate this edit form.
+ - GUI: Add the possibility to try a detection at another offset (sub-data).
+ - GUI: Add a go-to that permits to directly go to an offset.
+ - GUI: Enhance fluidity, it's really bad right now...
+
+Other ideas: not really sure if should be implemented.
+------------------------------------------------------
+
+ - structures: Add a loader for XML format provided for "synalyze it!"?
