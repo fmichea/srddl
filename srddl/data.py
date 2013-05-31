@@ -9,7 +9,7 @@ import srddl.core.helpers as sch
 import srddl.exceptions as se
 
 from srddl.core.fields import BoundValue
-from srddl.core.offset import Offset
+from srddl.core.offset import Offset, Size
 
 class Data:
     class MappedData(dict):
@@ -71,6 +71,14 @@ class Data:
         offset = Offset(offset)
         for _ in range(nb):
             offset += self.map(offset, struct)['size']
+
+    def map_fill_array(self, offset, size, struct):
+        offset, size = Offset(offset), Size(size)
+        while size < 0 or offset < size:
+            try:
+                offset += self.map(offset, struct)['size']
+            except _struct.error:
+                break
 
     def unpack_from(self, frmt, offset):
         return _struct.unpack_from(frmt, self.buf, offset)
