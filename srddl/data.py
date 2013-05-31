@@ -2,7 +2,7 @@ import collections
 import mmap
 import math
 import os
-import struct
+import struct as _struct
 import string
 
 import srddl.core.helpers as sch
@@ -73,12 +73,12 @@ class Data:
             offset += self.map(offset, struct)['size']
 
     def unpack_from(self, frmt, offset):
-        return struct.unpack_from(frmt, self.buf, offset)
+        return _struct.unpack_from(frmt, self.buf, offset)
 
     def pack_into(self, frmt, offset, *args):
         if self.ro:
             raise se.DataIsROError(self, offset)
-        struct.pack_into(frmt, self.buf, offset, *args)
+        _struct.pack_into(frmt, self.buf, offset, *args)
 
     def close(self):
         pass
