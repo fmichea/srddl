@@ -22,25 +22,35 @@ General TODOs
             foster adding more features.
  - file types: Add more decoders, only ELF is implemented, and not completly
                documented...
+ - file types, structures, data: Try to uniformize setup/_setup/map*. It's
+                                 quite disturbing at first.
 
 Core structure declaration
 --------------------------
 
+ - fields: Do something about the verbosity of IntField declaration. Size and
+           endianess options are long. Really long.
  - fields: Add more standard fields. Here is a list of ideas:
     * Reference field (OffsetField that describes a struct somewhere else, etc)
     * Checksum fields (CRC, ...)
+ - fields: Add a way to hook a SwitchFields to provide new types to an already
+           defined switch, to add temporary implementations of non-managed types
+           without modifing base sources.
  - structures: Add the possibility to do pattern matching, to search something
                in some data. Say, this first must be 2, this third field must
                respect this function, ...
  - structures: Add some automatic reference dependency. When an array depends on
                another field of the struct for its size for example, it would be
                awesome to have the array updated if the size is modified.
+ - structures: Add something to navigate to your parent (the structure that
+               mapped you) easily.
  - structures, fields: Add 'static' properties, to separate the need of an
                        instance and the possibilty to answer even without it.
  - structures, data: Add a layout for structure placement and an infinite data
                      type to be able to craft data "on-the-fly".
  - data: Add the possibility to insert in the data, instead of the default
          overriding usage.
+ - data: Add something to read infinite streamed data.
  - file data: Add some way to rename correctly the file associated with the map.
 
 Frontends
