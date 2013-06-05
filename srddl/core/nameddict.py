@@ -36,11 +36,11 @@ class _MetaNamedDict(sch.MetaAbstractDescriptor):
                             )
                     except AttributeError:
                         attr = getattr(super(res, res), kwd_name)
-                        _nameddict_prop.copy(kwd_val, attr)
+                        _nameddict_property.copy(kwd_val, attr)
                     aprops.discard(propname)
                 elif propname in props and not hasattr(kwd_val, '__nd_propabstract__'):
                     attr = getattr(super(res, res), kwd_name)
-                    _nameddict_prop.copy(kwd_val, attr)
+                    _nameddict_property.copy(kwd_val, attr)
                 p = props
                 if kwd_val.__nd_propabstract__:
                     p = aprops
@@ -79,7 +79,7 @@ class _MetaNamedDict(sch.MetaAbstractDescriptor):
 
 
 # FIXME: Add the possibility to set properties (with a read-only possibility).
-class _nameddict_prop:
+class _nameddict_property:
     def __init__(self, abstract, flags=None):
         self.abstract, self.flags = abstract, flags
 
@@ -97,11 +97,11 @@ class _nameddict_prop:
             setattr(a, f, getattr(b, f))
         a.__nd_propabstract__ = False
 
-class nameddict_prop(_nameddict_prop):
+class property(_nameddict_property):
     def __init__(self, *args, **kwargs):
         super().__init__(False, *args, **kwargs)
 
-class nameddict_abstractprop(_nameddict_prop):
+class abstractproperty(_nameddict_property):
     def __init__(self, *args, **kwargs):
         super().__init__(True, *args, **kwargs)
 

@@ -8,7 +8,7 @@ import inspect
 import pprint
 
 import srddl.core.helpers as sch
-import srddl.core.nameddict as zcn
+import srddl.core.nameddict as scnd
 import srddl.exceptions as se
 import srddl.helpers as sh
 
@@ -19,7 +19,7 @@ FieldInitStatus = sch.enum(KO=0, INIT=1, OK=2)
 
 REFERENCE_SIGNAL = Signal('current-ref')
 
-class _MetaAbstractField(zcn._MetaNamedDict):
+class _MetaAbstractField(scnd._MetaNamedDict):
     '''
     This meta-class will make sure that initialization of a Field is done
     correctly.
@@ -77,7 +77,7 @@ class _MetaAbstractField(zcn._MetaNamedDict):
         return super().__new__(cls, clsname, bases, kwds)
 
 
-class Value(zcn.NamedDict):
+class Value(scnd.NamedDict):
     '''
     The Value class is used by the ``values`` keyword parameter of certain
     fields. It is used to define documentation on values possible. The usage
@@ -97,19 +97,19 @@ class Value(zcn.NamedDict):
 #            id(self), self['value']
 #        )
 
-    @zcn.nameddict_abstractprop()
+    @scnd.abstractproperty()
     def _value(self, flags):
         pass
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _name(self, flags):
         pass
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _description(self, flags):
         pass
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _display_value(self, flags):
         res = str(self['value'])
         if self['name'] is not None:
@@ -138,15 +138,15 @@ class AbstractMappedValue(Value, metaclass=sch.MetaAbstractDescriptor):
         # Hexify, we are done!
         return binascii.hexlify(d)
 
-    @zcn.nameddict_abstractprop()
+    @scnd.abstractproperty()
     def _offset(self, flags):
         pass
 
-    @zcn.nameddict_abstractprop(flags=['static'])
+    @scnd.abstractproperty(flags=['static'])
     def _size(self, flags):
         pass
 
-    @zcn.nameddict_abstractprop()
+    @scnd.abstractproperty()
     def _hex(self, flags):
         pass
 
@@ -221,7 +221,7 @@ class BoundValue(AbstractMappedValue):
                 res = str(self['value'])
         return res
 
-    @zcn.nameddict_abstractprop()
+    @scnd.abstractproperty()
     def _field(self, flags):
         pass
 
@@ -244,8 +244,8 @@ class BoundValue(AbstractMappedValue):
         self._field.encode(self._instance, self['offset'], value)
 
 
-class AbstractField(zcn.NamedDict):
-    class MetaBase(zcn.NamedDict.MetaBase):
+class AbstractField(scnd.NamedDict):
+    class MetaBase(scnd.NamedDict.MetaBase):
         aligned = True
         boundvalue_class = BoundValue
 
@@ -269,11 +269,11 @@ class AbstractField(zcn.NamedDict):
         self._set_data(instance, 'boundvalue', bv)
         return bv['size']
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _description(self, flags):
         pass
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _path(self, flags):
         pass
 

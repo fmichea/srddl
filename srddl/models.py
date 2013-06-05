@@ -11,7 +11,7 @@ import srddl.core.helpers as sch
 import srddl.data as sd
 import srddl.exceptions as se
 
-import srddl.core.nameddict as zcn
+import srddl.core.nameddict as scnd
 
 from srddl.core.fields import AbstractMappedValue, AbstractField, FieldInitStatus
 from srddl.core.offset import Offset, Size
@@ -63,7 +63,7 @@ class _SrddlInternal(AbstractMappedValue):
                 return None
         return size
 
-    @zcn.nameddict_prop()
+    @scnd.property()
     def _fields(self, flags):
         lst = list(self.namespace.keys())
         for key, new in self.instance._pre_mapping(self['data'], lst):
@@ -81,7 +81,7 @@ class _SrddlInternal(AbstractMappedValue):
     def _description(self, flags):
         return inspect.getdoc(self.instance.__class__) or ''
 
-    @zcn.nameddict_abstractprop()
+    @scnd.abstractproperty()
     def _data(self, flags):
         pass
 
