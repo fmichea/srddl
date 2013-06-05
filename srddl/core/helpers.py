@@ -1,12 +1,46 @@
 # Author: Franck Michea <franck.michea@gmail.com>
 # License: New BSD License (See LICENSE)
 
-import inspect
+import abc
+import functools
 import imp
+import inspect
 import os
 import sys
 
 import srddl.core.exceptions as sce
+
+class MetaAbstractDescriptor(abc.ABCMeta):
+    '''
+    This metaclass inherits from abc.ABCMeta and wrap __get__ and __set__
+    functions to implement mandatory instance == None case.
+    '''
+
+    def __new__(cls, name, bases, kwds):
+        # Wrap __get__ to always implement instance == None case returning the
+        # descriptor itself. It also fetches the right instance of struct in
+        # case we are in a container.
+        __get__ = kwds.get('__get__')
+        if __get__ is not None:
+            @functools.wraps(__get__)
+            def wrapper(self, instance, owner=None):
+                if instance is None:
+                    return self
+                return __get__(self, instance, owner)
+            kwds['__get__'] = wrapper
+
+        # The descriptor is not writable on a model level, so it raises an
+        # attribute error when set without an instance.
+        __set__ = kwds.get('__set__')
+        if __set__ is not None:
+            @functools.wraps(__set__)
+            def wrapper(self, instance, value):
+                if instance is None:
+                    raise AttributeError("Can't set without an instance.")
+                return __set__(self, instance, value)
+            kwds['__set__'] = wrapper
+        return super().__new__(cls, name, bases, kwds)
+
 
 def enum(**enums):
     if 'values' in enums:
@@ -64,47 +98,6 @@ class MetaConf:
             except AttributeError:
                 pass
         raise sce.NoMetaConfError(cls, key)
-
-
-class NamedDict(MetaConf):
-    class MetaBase:
-        fields = []
-        ro_fields = []
-        optional = []
-
-    def __init__(self, *args, **kwargs):
-        '''
-        Init function of this class has a specific behavior. Positional
-        arguments are are in the order of the ``fields`` list. Then you can
-        override specific values with keyword arguments.
-        '''
-        vals = dict(zip(self.metaconf('fields'), args))
-        vals.update(kwargs)
-        for name in self.metaconf('fields'):
-            if name not in vals:
-                continue
-            setattr(self, '_{}'.format(name), vals.get(name, None))
-
-    def __getitem__(self, attr_name):
-        '''This function permits to access the attributes of the object.'''
-        lst = self.metaconf('fields') + self.metaconf('ro_fields')
-        if attr_name not in lst:
-            raise KeyError
-        try:
-            return getattr(self, '_{}'.format(attr_name))
-        except AttributeError:
-            if attr_name in self.metaconf('optional'):
-                return None
-        raise sce.NamedDictPropertyError(self.__class__, attr_name)
-
-    def __setitem__(self, attr_name, value):
-        if attr_name not in self.metaconf('fields'):
-            raise KeyError
-        setattr(self, '_{}'.format(attr_name), value)
-
-    def copy(self, other):
-        for field in type(other).metaconf('fields'):
-            setattr(self, '_{}'.format(field), other[field])
 
 
 class NamedRecord(MetaConf):

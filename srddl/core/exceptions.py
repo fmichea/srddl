@@ -13,13 +13,39 @@ class NoMetaConfError(Exception):
         return res.format(name = self.name, klss = self.klass.__name__)
 
 
-class NamedDictPropertyError(Exception):
-    def __init__(self, klass, prop):
-        self.klass, self.prop = klass, prop
+# ----- NamedDict Exceptions ---------------------------------------------------
+
+class NamedDictAbstractPropertyError(Exception):
+    def __init__(self, klass, props, reason):
+        self.klass, self.props, self.reason = klass, props, reason
 
     def __str__(self):
-        res = 'Property {prop} in class {klass} was not implemented.'
-        return res.format(klass=self.klass, prop=self.prop)
+        res = 'Can\'t instanciate class {klass}. Propert'
+        res += ('ies' if 1 < len(self.props) else 'y') + ' {props} w'
+        res += ('ere' if 1 < len(self.props) else 'as') + ' not implemented:'
+        res += ' {reason}'
+        return res.format(klass=self.klass, props=', '.join(self.props), reason=self.reason)
+
+
+class NamedDictPropertyFlagsError(Exception):
+    def __init__(self, klass, attr_name, flags):
+        self.klass, self.attr_name, self.flags = klass, attr_name, flags
+
+    def __str__(self):
+        flags = ', '.join(self.flags)
+        res = 'Can\'t fetch value for property {attr_name} in class {klass}. '
+        res += 'Flag' + ('s ' if 1 < len(self.flags) else '') + ' {flags} '
+        res += ('are' if 1 < len(self.flags) else 'is') + ' not known.'
+        return res.format(klass=self.klass, attr_name=self.attr_name, flags=flags)
+
+
+class NamedDictPropertyRedefinitionError(Exception):
+    def __init__(self, klass, propname, reason):
+        self.klass, self.propname, self.reason = klass, propname, reason
+
+    def __str__(self):
+        res = 'Can\'t redefine property {propname} in class {klass}: {reason}'
+        return res.format(propname=self.propname, klass=self.klass, reason=self.reason)
 
 
 # ----- File types loader ------------------------------------------------------
