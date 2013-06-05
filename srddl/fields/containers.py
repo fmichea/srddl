@@ -20,11 +20,10 @@ class AbstractContainerField(scf.AbstractField):
 
 class SuperFieldBoundValue(scf.BoundValue):
     def __getattr__(self, attr_name):
-        return getattr(self.__getitem__('value'), attr_name)
+        return getattr(self['value'], attr_name)
 
-    @property
-    def _size(self):
-        return self._value['size']
+    def _size(self, flags):
+        return self['value']['size']
 
 
 class SuperField(AbstractContainerField):
@@ -48,35 +47,35 @@ class SuperField(AbstractContainerField):
 
 class ArrayFieldBoundValue(scf.BoundValue):
     def __len__(self):
-        return len(self._value)
+        return len(self['value'])
 
     def __getitem__(self, idx):
         if isinstance(idx, str):
             res = super().__getitem__(idx)
         elif isinstance(idx, slice):
             res = []
-            for it in islice(self._value, idx.start, idx.stop, idx.step):
+            for it in islice(self['value'], idx.start, idx.stop, idx.step):
                 res.append(it.__get__(self._instance))
         else:
-            res = self._value[idx].__get__(self._instance)
+            res = self['value'][idx].__get__(self._instance)
         return res
 
     def __setitem__(self, idx, value):
         if isinstance(idx, slice):
-            tmp = zip(islice(self._value, idx.start, idx.stop, idx.step), value)
+            tmp = zip(islice(self['value'], idx.start, idx.stop, idx.step), value)
             for it, value in tmp:
                 it.__set__(self._instance, value)
         else:
-            self._value[idx].__set__(self._instance, value)
+            self['value'][idx].__set__(self._instance, value)
 
     def __iter__(self):
-        for it in self._value:
+        for it in self['value']:
             yield it.__get__(self._instance)
 
     @property
     def _size(self):
         res = sco.Size()
-        for it in self._value:
+        for it in self['value']:
             res += it.__get__(self._instance)['size']
         return res
 
@@ -103,13 +102,13 @@ class ArrayField(AbstractContainerField):
 
 class UnionFieldBoundValue(scf.BoundValue):
     def __getattr__(self, attr_name):
-        if attr_name not in self._value:
+        if attr_name not in self['value']:
             raise AttributeError
-        return self._value[attr_name]
+        return self['value'][attr_name]
 
     @property
     def _size(self):
-        return self._value[list(self._value.keys())[0]]['size']
+        return self['value'][list(self['value'].keys())[0]]['size']
 
 
 class UnionField(AbstractContainerField):

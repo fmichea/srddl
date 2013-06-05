@@ -11,6 +11,8 @@ import srddl.core.helpers as sch
 import srddl.data as sd
 import srddl.exceptions as se
 
+import srddl.core.nameddict as zcn
+
 from srddl.core.fields import AbstractMappedValue, AbstractField, FieldInitStatus
 from srddl.core.offset import Offset, Size
 
@@ -22,7 +24,7 @@ class _SrddlInternal(AbstractMappedValue):
     '''
 
     class Meta(AbstractMappedValue.Meta):
-        ro_fields = ['data', 'fields'] + AbstractMappedValue.Meta.ro_fields
+        init_props = ['_', 'data', 'offset']# + AbstractMappedValue.Meta.init_props
 
     def __init__(self, instance, data, offset):
         self.instance, self._data, self._offset = instance, data, Offset(offset)
@@ -40,38 +42,48 @@ class _SrddlInternal(AbstractMappedValue):
 
     def map_struct(self):
         cur_offset = Offset()
-        for field_name in self._fields:
+        for field_name in self['fields']:
             field = self.namespace[field_name]
             while True:
                 field_pi = field.pre_initialize(self.instance)
                 if field_pi is None:
                     break
                 field, self.namespace[field_name] = field_pi, field_pi
-            off = self._offset + cur_offset
+            off = self['offset'] + cur_offset
             field.initialize(self.instance, off, path=field_name)
             cur_offset += field.__get__(self.instance)['size']
-        self._size = Size(cur_offset)
 
-    @property
-    def _fields(self):
+    def _size(self, flags):
+        size, prop = Size(), 'size' + (':static' if flags['static'] else '')
+        for field_name in self['fields']:
+            field = self.namespace[field_name]
+            try:
+                size += field.__get__(self.instance)[prop]
+            except TypeError:
+                return None
+        return size
+
+    @zcn.nameddict_prop()
+    def _fields(self, flags):
         lst = list(self.namespace.keys())
-        for key, new in self.instance._pre_mapping(self._data, lst):
+        for key, new in self.instance._pre_mapping(self['data'], lst):
             if -1 < new < len(lst):
                 del lst[lst.index(key)]
                 lst.insert(new, key)
         return lst
 
-    @property
-    def _hex(self):
+    def _hex(self, flags):
         return self._hexify(self._data)
 
-    @property
-    def _value(self):
+    def _value(self, flags):
         return self._apply_all([], 'value', fn=lambda x: [x])
 
-    @property
-    def _description(self):
+    def _description(self, flags):
         return inspect.getdoc(self.instance.__class__) or ''
+
+    @zcn.nameddict_abstractprop()
+    def _data(self, flags):
+        pass
 
     def _apply_all(self, res, item, fn=lambda x: x):
         for field_name in self._fields:

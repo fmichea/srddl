@@ -21,7 +21,7 @@ class AbstractField(scf.AbstractField):
 
 class IntFieldBoundValue(scf.BoundValue):
     def __index__(self):
-        return self._value
+        return self['value']
 
 
 class IntField(scf.AbstractField):

@@ -8,6 +8,7 @@ import inspect
 import pprint
 
 import srddl.core.helpers as sch
+import srddl.core.nameddict as zcn
 import srddl.exceptions as se
 import srddl.helpers as sh
 
@@ -18,39 +19,7 @@ FieldInitStatus = sch.enum(KO=0, INIT=1, OK=2)
 
 REFERENCE_SIGNAL = Signal('current-ref')
 
-class _MetaAbstractDescriptor(abc.ABCMeta):
-    '''
-    This metaclass inherits from abc.ABCMeta and wrap __get__ and __set__
-    functions to implement mandatory instance == None case.
-    '''
-
-    def __new__(cls, name, bases, kwds):
-        # Wrap __get__ to always implement instance == None case returning the
-        # descriptor itself. It also fetches the right instance of struct in
-        # case we are in a container.
-        __get__ = kwds.get('__get__')
-        if __get__ is not None:
-            @functools.wraps(__get__)
-            def wrapper(self, instance, owner=None):
-                if instance is None:
-                    return self
-                return __get__(self, instance, owner)
-            kwds['__get__'] = wrapper
-
-        # The descriptor is not writable on a model level, so it raises an
-        # attribute error when set without an instance.
-        __set__ = kwds.get('__set__')
-        if __set__ is not None:
-            @functools.wraps(__set__)
-            def wrapper(self, instance, value):
-                if instance is None:
-                    raise AttributeError("Can't set without an instance.")
-                return __set__(self, instance, value)
-            kwds['__set__'] = wrapper
-        return super().__new__(cls, name, bases, kwds)
-
-
-class _MetaAbstractField(_MetaAbstractDescriptor):
+class _MetaAbstractField(zcn._MetaNamedDict):
     '''
     This meta-class will make sure that initialization of a Field is done
     correctly.
@@ -78,7 +47,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
                 except se.NoFieldDataError:
                     status = FieldInitStatus.KO
                 self._set_data(instance, 'status', FieldInitStatus.INIT)
-                initialize(self, instance, offset, **kwargs)
+
                 if status != FieldInitStatus.INIT:
                     self._set_data(instance, 'status', FieldInitStatus.OK)
             kwds['initialize'] = wrapper
@@ -108,7 +77,7 @@ class _MetaAbstractField(_MetaAbstractDescriptor):
         return super().__new__(cls, clsname, bases, kwds)
 
 
-class Value(sch.NamedDict):
+class Value(zcn.NamedDict):
     '''
     The Value class is used by the ``values`` keyword parameter of certain
     fields. It is used to define documentation on values possible. The usage
@@ -121,44 +90,65 @@ class Value(sch.NamedDict):
     '''
 
     class Meta:
-        fields = ['value', 'name', 'description']
-        ro_fields = ['display_value']
-        optional = ['name', 'description']
+        init_props = ['value', 'name', 'description']
 
-    def __repr__(self):
-        return '<Value at {:#x} with value {}>'.format(
-            id(self), self['value']
-        )
+#    def __repr__(self):
+#        return '<Value at {:#x} with value {}>'.format(
+#            id(self), self['value']
+#        )
 
-    @property
-    def _display_value(self):
+    @zcn.nameddict_abstractprop()
+    def _value(self, flags):
+        pass
+
+    @zcn.nameddict_prop()
+    def _name(self, flags):
+        pass
+
+    @zcn.nameddict_prop()
+    def _description(self, flags):
+        pass
+
+    @zcn.nameddict_prop()
+    def _display_value(self, flags):
         res = str(self['value'])
         if self['name'] is not None:
             res += ' ({})'.format(self['name'])
         return res
 
 
-class AbstractMappedValue(Value, metaclass=_MetaAbstractDescriptor):
+class AbstractMappedValue(Value, metaclass=sch.MetaAbstractDescriptor):
     class Meta(Value.Meta):
-        fields = ['offset'] + Value.Meta.fields
-        ro_fields = ['size', 'hex'] + Value.Meta.ro_fields
+        init_props = ['offset'] + Value.Meta.init_props
 
-    def __repr__(self):
-        return '<MappedValue at {:#x} with value {}>'.format(
-            id(self), self['value']
-        )
-
+#    def __repr__(self):
+#        return '<MappedValue at {:#x} with value {}>'.format(
+#            id(self), self['value']
+#        )
+#
     def _hexify(self, data):
         # Unpack the complete data.
-        f = '{}s'.format(self._size.rounded())
-        d = bytearray(data.unpack_from(f, self._offset.rounded())[0])
+        f = '{}s'.format(self['size'].rounded())
+        d = bytearray(data.unpack_from(f, self['offset'].rounded())[0])
         # Remove starting bits not included in the mapped value.
-        d[0] = d[0] & ((0xff >> self._offset.bit) & 0xff)
+        d[0] = d[0] & ((0xff >> self['offset'].bit) & 0xff)
         # Remove trailing bits not included in the mapped value.
-        s = self._size.bit + (self._offset.bit if not self._size.byte else 0)
+        s = self['size'].bit + (self['offset'].bit if not self['size'].byte else 0)
         d[-1] = d[-1] & ((0xff << (8 - s if s else 0)) & 0xff)
         # Hexify, we are done!
         return binascii.hexlify(d)
+
+    @zcn.nameddict_abstractprop()
+    def _offset(self, flags):
+        pass
+
+    @zcn.nameddict_abstractprop(flags=['static'])
+    def _size(self, flags):
+        pass
+
+    @zcn.nameddict_abstractprop()
+    def _hex(self, flags):
+        pass
 
 
 @functools.total_ordering
@@ -178,20 +168,20 @@ class BoundValue(AbstractMappedValue):
     '''
 
     class Meta(AbstractMappedValue.Meta):
-        ro_fields = ['field'] + AbstractMappedValue.Meta.ro_fields
+        init_props = ['_', 'field'] + AbstractMappedValue.Meta.init_props
 
     def __init__(self, instance, field, offset, valid):
-        super().__init__(offset)
-        self._field, self._instance, self._valid_func = field, instance, valid
+        super().__init__(field, offset)
+        self._instance, self._valid_func = instance, valid
 
-    def __repr__(self):
-        res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
-        value = self['value']
-        if value is not None:
-            res += ' with value {}'.format(repr(value))
-        res += '>'
-        return res
-
+#    def __repr__(self):
+#        res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
+#        value = self['value']
+#        if value is not None:
+#            res += ' with value {}'.format(repr(value))
+#        res += '>'
+#        return res
+#
     def __str__(self):
         res = ' '.join(repr(self).split()[:5])
         if res.endswith('>'):
@@ -199,55 +189,50 @@ class BoundValue(AbstractMappedValue):
         return '{} {}>'.format(res, self['display_value'])
 
     def __getitem__(self, item):
-        if item != 'value' and item in Value.metaconf('fields'):
+        if item != 'value' and item in Value.__nd_props__:
             # Force decoding of value for those fields.
-            _ = self._value
+            _ = self['value']
         return super().__getitem__(item)
 
-    @property
-    def _hex(self):
+    def _hex(self, flags):
         return self._hexify(self._instance['data'])
 
-    @property
-    def _size(self):
+    def _size(self, flags):
         return Size(byte=sch.reference_value(self._instance, self._field._size))
 
-    @property
-    def _value(self):
-        res = self._field.decode(self._instance, self._offset)
+    def _value(self, flags):
+        res = self._field.decode(self._instance, self['offset'])
         if isinstance(res, Value):
             self.copy(res)
             return res['value']
         return res
 
-    @_value.setter
-    def _value(self, value):
-        pass
+    def _valid(self, flags):
+        return self._valid_func(self['value'])
 
-    @property
-    def _valid(self):
-        return self._valid_func(self._value)
-
-    @property
-    def _display_value(self):
-        res = self._field._display_value(self._value)
+    def _display_value(self, flags):
+        res = self._field._display_value(self['value'])
         if self['name'] is not None:
             res += ' ({})'.format(self['name'])
         if res is None and self['value'] is not None:
             if self['name'] is not None:
-                res = super()._display_value
+                res = super()['display_value']
             else:
                 res = str(self['value'])
         return res
 
+    @zcn.nameddict_abstractprop()
+    def _field(self, flags):
+        pass
+
     def __bool__(self):
-        return bool(self._value)
+        return bool(self['value'])
 
     def __eq__(self, other):
         # This function is needed by functools.total_ordering.
         if isinstance(other, BoundValue):
-            return self._value == other._value
-        return self._value == other
+            return self['value'] == other['value']
+        return self['value'] == other
 
     def __lt__(self, other):
         # This function is needed by functools.total_ordering.
@@ -256,17 +241,16 @@ class BoundValue(AbstractMappedValue):
         return self.value < other
 
     def set(self, value):
-        self._field.encode(self._instance, self._offset, value)
+        self._field.encode(self._instance, self['offset'], value)
 
 
-class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
-    class MetaBase(sch.NamedDict.MetaBase):
+class AbstractField(zcn.NamedDict):
+    class MetaBase(zcn.NamedDict.MetaBase):
         aligned = True
         boundvalue_class = BoundValue
 
-        fields = ['description']
-        ro_fields = ['path']
-        optional = ['description']
+    class Meta:
+        init_fields = ['description']
 
     def __init__(self, *args, **kwargs):
         self._valid = kwargs.pop('valid', lambda _: None)
@@ -284,6 +268,14 @@ class AbstractField(sch.NamedDict, metaclass=_MetaAbstractField):
             self._path = path
         self._set_data(instance, 'boundvalue', bv)
         return bv['size']
+
+    @zcn.nameddict_prop()
+    def _description(self, flags):
+        pass
+
+    @zcn.nameddict_prop()
+    def _path(self, flags):
+        pass
 
     @functools.lru_cache()
     def __get__(self, instance, owner=None):
