@@ -157,6 +157,7 @@ class NamedDict(sch.MetaConf, metaclass=_MetaNamedDict):
             raise sce.NamedDictPropertyFlagsError(*args)
         kwds = dict([(c, False) for c in prop.__nd_propflags__])
         kwds.update(dict([(c, True) for c in attr_flags]))
+        kwds['_nd_attrname'] = _attr_name
         return prop(kwds)
 
     def copy(self, other):
