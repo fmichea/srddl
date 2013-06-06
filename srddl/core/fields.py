@@ -109,7 +109,7 @@ class Value(scnd.NamedDict):
     def _description(self, flags):
         pass
 
-    @scnd.property()
+    @scnd.property(flags=['verbose'])
     def _display_value(self, flags):
         res = str(self['value'])
         if self['name'] is not None:
