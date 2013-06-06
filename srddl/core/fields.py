@@ -19,7 +19,10 @@ FieldInitStatus = sch.enum(KO=0, INIT=1, OK=2)
 
 REFERENCE_SIGNAL = Signal('current-ref')
 
-class _MetaAbstractField(scnd._MetaNamedDict):
+class _MetaAbstractMappedValue(scnd._MetaNamedDict, sch.MetaAbstractDescriptor):
+    pass
+
+class _MetaAbstractField(_MetaAbstractMappedValue):
     '''
     This meta-class will make sure that initialization of a Field is done
     correctly.
@@ -117,7 +120,7 @@ class Value(scnd.NamedDict):
         return res
 
 
-class AbstractMappedValue(Value, metaclass=sch.MetaAbstractDescriptor):
+class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
     class Meta(Value.Meta):
         init_props = ['offset'] + Value.Meta.init_props
 

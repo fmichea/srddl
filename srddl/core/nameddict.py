@@ -7,7 +7,7 @@ import srddl.core.helpers as sch
 def _nameddict_propname(funcname):
     return funcname[1:]  # XXX: Assumes that the func is private (starts with _).
 
-class _MetaNamedDict(sch.MetaAbstractDescriptor):
+class _MetaNamedDict(type):
     def __new__(cls, clsname, bases, namespace, **kwds):
         res = super().__new__(cls, clsname, bases, namespace, **kwds)
 
