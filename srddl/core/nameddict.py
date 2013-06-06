@@ -19,28 +19,29 @@ class _MetaNamedDict(sch.MetaAbstractDescriptor):
             except AttributeError:
                 pass
         for kwd_name, kwd_val in res.__dict__.items():
-            try:
-                propname = _nameddict_propname(kwd_name)
-                if propname in aprops:
+            propname = _nameddict_propname(kwd_name)
+            if propname in (aprops | props):
+                reason = None
+                try:
+                    if kwd_val.__nd_propabstract__:
+                        reason = 'you can\'t add an implementation as '
+                        reason += 'abstract.'
+                    if kwd_val.__nd_propflags__ != []:
+                        reason = 'you can\'t change flags in a '
+                        reason += 'sub-implementation.'
+                except AttributeError:
                     try:
-                        reason = None
-                        if kwd_val.__nd_propabstract__:
-                            reason = 'you can\'t add an implementation as '
-                            reason += 'abstract.'
-                        if kwd_val.__nd_propflags__ != []:
-                            reason = 'you can\'t change flags in a '
-                            reason += 'sub-implementation.'
-                        if reason is not None:
-                            raise sce.NamedDictPropertyRedefinitionError(
-                                res.__name__, propname, reason
-                            )
-                    except AttributeError:
                         attr = getattr(super(res, res), kwd_name)
                         _nameddict_property.copy(kwd_val, attr)
-                    aprops.discard(propname)
-                elif propname in props and not hasattr(kwd_val, '__nd_propabstract__'):
-                    attr = getattr(super(res, res), kwd_name)
-                    _nameddict_property.copy(kwd_val, attr)
+                    except AttributeError:
+                        reason = 'can\'t transform the overriding function '
+                        reason += 'into a named dict property.'
+                if reason is not None:
+                    raise sce.NamedDictPropertyRedefinitionError(
+                        res.__name__, propname, reason
+                    )
+                aprops.discard(propname)
+            try:
                 p = props
                 if kwd_val.__nd_propabstract__:
                     p = aprops
@@ -54,7 +55,7 @@ class _MetaNamedDict(sch.MetaAbstractDescriptor):
     def __call__(self, *args, **kwargs):
         abstracts = self.__nd_abstractprops__ - set(self.metaconf('init_props'))
         if abstracts:
-            reason = 'propert' + ('ies are' if len(abstracts) else 'y is')
+            reason = 'propert' + ('ies are' if 1 < len(abstracts) else 'y is')
             reason += ' not defined.'
             raise sce.NamedDictAbstractPropertyError(self.__name__, abstracts, reason)
 

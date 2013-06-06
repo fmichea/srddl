@@ -6,8 +6,7 @@ import srddl.core.fields as scf
 import srddl.core.helpers as sch
 
 class PaddingBoundValue(scf.BoundValue):
-    @property
-    def _size(self):
+    def _size(self, flags):
         if self._field._mode == PaddingField.Mode.TAKE:
             return self._field._size
         elif self._field._mode == PaddingField.Mode.FILL:

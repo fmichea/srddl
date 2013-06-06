@@ -89,8 +89,7 @@ class ByteArrayField(scf.AbstractField):
 
 
 class BitFieldBoundValue(IntFieldBoundValue):
-    @property
-    def _size(self):
+    def _size(self, flags):
         size = sch.reference_value(self._instance, self._field._size)
         if not (0 < size < 8):
             return se.BifFieldSizeError(size)

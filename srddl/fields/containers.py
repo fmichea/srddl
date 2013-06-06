@@ -72,8 +72,7 @@ class ArrayFieldBoundValue(scf.BoundValue):
         for it in self['value']:
             yield it.__get__(self._instance)
 
-    @property
-    def _size(self):
+    def _size(self, flags):
         res = sco.Size()
         for it in self['value']:
             res += it.__get__(self._instance)['size']
@@ -106,8 +105,7 @@ class UnionFieldBoundValue(scf.BoundValue):
             raise AttributeError
         return self['value'][attr_name]
 
-    @property
-    def _size(self):
+    def _size(self, flags):
         return self['value'][list(self['value'].keys())[0]]['size']
 
 
