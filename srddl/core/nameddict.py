@@ -124,12 +124,13 @@ class NamedDict(sch.MetaConf, metaclass=_MetaNamedDict):
         for name in self.metaconf('init_props'):
             if name not in vals:
                 continue
-            try:
-                prop = getattr(self, '_{}'.format(name))
-                if prop.__nd_propabstract__:
-                    raise AttributeError('OK')
-            except AttributeError:
-                setattr(self, '_{}'.format(name), vals.get(name, None))
+# FIXME: Why did I write that?
+#            try:
+#                prop = getattr(self, '_{}'.format(name))
+#                if prop.__nd_propabstract__:
+#                    raise AttributeError('OK')
+#            except AttributeError:
+            setattr(self, '_{}'.format(name), vals.get(name, None))
 
     def __getitem__(self, _attr_name):
         '''This function permits to access the attributes of the object.'''
