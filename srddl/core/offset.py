@@ -16,6 +16,7 @@ class _Offset(metaclass=abc.ABCMeta):
             self.byte, self.bit = byte.byte, byte.bit
         else:
             self.byte, self.bit = byte, bit
+        self.byte, self.bit = self.byte + self.bit // 8, self.bit % 8
 
     def __index__(self):
         return self.byte
