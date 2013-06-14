@@ -62,7 +62,7 @@ class IntField(scf.AbstractField):
         sig = self._endianess + 'bhiq'[log2[size.byte]]
         return (sig if self._signed else sig.upper())
 
-    def _display_value(self, value):
+    def _display_value(self, flags, value):
         formats = {
             IntField.Base.BIN: '{:#b}', IntField.Base.OCT: '{:#o}',
             IntField.Base.DEC: '{}', IntField.Base.HEX: '{:#x}',
@@ -142,11 +142,11 @@ class BitMaskField(IntField):
             res.append(nb ^ mask)
         return (res if res else [nb])
 
-    def _display_value(self, vals):
+    def _display_value(self, flags, vals):
         res = []
         for val in vals:
             if isinstance(val, scf.Value):
-                res.append(val['display_value'])
+                res.append(val[flags['_nd_attrname']])
             else:
                 res.append(val)
         return ' | '.join(str(c) for c in res)

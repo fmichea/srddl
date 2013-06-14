@@ -32,6 +32,9 @@ class SuperField(AbstractContainerField):
     a structure.
     '''
 
+    class Meta:
+        boundvalue_class = SuperFieldBoundValue
+
     def __init__(self, cls, *args, **kwargs):
         if not issubclass(cls, sm.Struct):
             raise se.SuperFieldError()
@@ -41,8 +44,8 @@ class SuperField(AbstractContainerField):
     def decode(self, instance, offset):
         return self._cls(instance['data'], offset)
 
-    class Meta:
-        boundvalue_class = SuperFieldBoundValue
+    def _display_value(self, flags, value):
+        return value[flags['_nd_attrname']]
 
 
 class ArrayFieldBoundValue(scf.BoundValue):

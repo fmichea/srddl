@@ -53,6 +53,17 @@ class _SrddlInternal(AbstractMappedValue):
             field.initialize(self.instance, off, path=field_name)
             cur_offset += field.__get__(self.instance)['size']
 
+    def _display_value(self, flags):
+        res = '{} [{}, {}] = {{\n'.format(
+            self.instance.__class__.__name__, self['offset'], self['size'],
+        )
+        for field_name in self['fields']:
+            val = getattr(self.instance, field_name)[flags['_nd_attrname']]
+            val = val.replace('\n', '\n    ')
+            res += '    {} = {},\n'.format(field_name, val)
+        res += '}'
+        return res
+
     def _size(self, flags):
         size, prop = Size(), 'size' + (':static' if flags['static'] else '')
         for field_name in self['fields']:
@@ -136,17 +147,18 @@ class Struct(metaclass=_MetaStruct):
             raise se.NotOnDataError(self)
         self._srddl = _SrddlInternal(self, data, offset)
 
-    def __repr__(self):
-        args = [self.__class__.__name__, id(self), self['offset']]
-        return '<{} at {:#x} at offset {}>'.format(*args)
-
-    def __str__(self):
-        res = repr(self)[:-1] + '\n'
-        for field in self['fields']:
-            val = str(getattr(self, field)).replace('\n', '\n    ')
-            res += '    {} = {},\n'.format(field, val)
-        res += '>'
-        return res
+#    def __repr__(self):
+#        args = [self.__class__.__name__, id(self), self['offset']]
+#        return '<{} at {:#x} at offset {}>'.format(*args)
+#
+#    def __str__(self):
+#        res = repr(self)[:-1] + '\n'
+#        for field in self['fields']:
+#            val = str(getattr(self, field)).replace('\n', '\n    ')
+#            res += '    {} = {},\n'.format(field, val)
+#        res += '>'
+#        return res
+#
 
     def __getitem__(self, item):
         return self._srddl[item]

@@ -116,7 +116,9 @@ class Value(scnd.NamedDict):
     def _display_value(self, flags):
         res = str(self['value'])
         if self['name'] is not None:
-            res += ' ({})'.format(self['name'])
+            res = '{}'.format(self['name'])
+            if flags['verbose']:
+                res = '{} ({})'.format(self['value'], res)
         return res
 
 
@@ -185,11 +187,11 @@ class BoundValue(AbstractMappedValue):
 #        res += '>'
 #        return res
 #
-    def __str__(self):
-        res = ' '.join(repr(self).split()[:5])
-        if res.endswith('>'):
-            return res
-        return '{} {}>'.format(res, self['display_value'])
+#    def __str__(self):
+#        res = ' '.join(repr(self).split()[:5])
+#        if res.endswith('>'):
+#            return res
+#        return '{} {}>'.format(res, self['display_value'])
 
     def __getitem__(self, item):
         if item != 'value' and item in Value.__nd_props__:
@@ -214,14 +216,17 @@ class BoundValue(AbstractMappedValue):
         return self._valid_func(self['value'])
 
     def _display_value(self, flags):
-        res = self._field._display_value(self['value'])
-        if self['name'] is not None:
+        res = self._field._display_value(flags, self['value'])
+        if res is not None and self['name'] is not None:
             res += ' ({})'.format(self['name'])
-        if res is None and self['value'] is not None:
-            if self['name'] is not None:
-                res = super()['display_value']
+        elif res is None:
+            if self['value'] is not None:
+                if self['name'] is not None:
+                    res = super()[flags['_nd_attrname']]
+                else:
+                    res = str(self['value'])
             else:
-                res = str(self['value'])
+                res = '[...]'
         return res
 
     @scnd.abstractproperty()
@@ -311,5 +316,5 @@ class AbstractField(scnd.NamedDict):
         '''Sets the data associated with the field.'''
         instance._srddl.fields_data[self._data_key(name)] = value
 
-    def _display_value(self, val):
+    def _display_value(self, flags, val):
         return None
