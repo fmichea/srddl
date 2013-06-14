@@ -7,7 +7,6 @@ import srddl.core.helpers as sch
 import srddl.core.offset as sco
 import srddl.exceptions as se
 
-
 class AbstractField(scf.AbstractField):
     def initialize(self, instance, *args, **kwargs):
         raise se.AbstractStructError(instance)
@@ -90,10 +89,10 @@ class ByteArrayField(scf.AbstractField):
 
 class BitFieldBoundValue(IntFieldBoundValue):
     def _size(self, flags):
-        size = sch.reference_value(self._instance, self._field._size)
-        if not (0 < size < 8):
+        size = sco.Size(bit=sch.reference_value(self._instance, self._field._size))
+        if (size + sco.Size(bit=self['offset'].bit)).rounded() not in IntField.Size.values():
             return se.BifFieldSizeError(size)
-        return sco.Size(bit=size)
+        return size
 
 
 class BitField(scf.AbstractField):
@@ -107,23 +106,27 @@ class BitField(scf.AbstractField):
 
     def decode(self, instance, offset):
         size = self.__get__(instance)['size']
-        i = instance['data'].unpack_from('>H', offset.byte)[0]
+        log2 = {1: 0, 2: 1, 4: 2, 8: 3}
+        sig = '>' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
+        i = instance['data'].unpack_from(sig, offset.rounded())[0]
         mask = self._mask(size) << self._mask_offset(offset.bit, size)
         return ((i & mask) >> self._mask_offset(offset.bit, size))
 
     def encode(self, instance, offset, value):
         size = self.__get__(instance)['size']
-        i = instance['data'].unpack_from('>H', offset.byte)[0]
+        log2 = {1: 0, 2: 1, 4: 2, 8: 3}
+        sig = '>' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
+        i = instance['data'].unpack_from(sig, offset.rounded)[0]
         mask = self._mask(size) << self._mask_offset(offset.bit, size)
         res = (i & ((~mask) & 0xffff))
         res |= (value & self._mask(size)) << self._mask_offset(offset.bit, size)
-        instance['data'].pack_into('>H', offset.byte, res)
+        instance['data'].pack_into(sig, offset.rounded(), res)
 
     def _mask(self, size):
-        return ((1 << size.bit) - 1)
+        return ((1 << (size.byte * 8 + size.bit)) - 1)
 
     def _mask_offset(self, bit, size):
-        return (16 - bit - size.bit)
+        return (8 * size.rounded() - bit - (size.byte * 8 + size.bit))
 
 
 class BitMaskField(IntField):
