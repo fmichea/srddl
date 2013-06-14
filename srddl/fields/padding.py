@@ -17,6 +17,9 @@ class PaddingBoundValue(scf.BoundValue):
 class PaddingField(scf.AbstractField):
     Mode = sch.enum(TAKE=0, FILL=1)
 
+    class Meta:
+        boundvalue_class = PaddingBoundValue
+
     def __init__(self, size, **kwargs):
         super().__init__()
         self._mode = kwargs.get('mode', PaddingField.Mode.TAKE)
@@ -27,6 +30,3 @@ class PaddingField(scf.AbstractField):
 
     def encode(self, data, offset, value):
         pass
-
-    class Meta:
-        boundvalue_class = PaddingBoundValue
