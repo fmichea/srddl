@@ -107,26 +107,23 @@ class BitField(scf.AbstractField):
     def decode(self, instance, offset):
         size = self.__get__(instance)['size']
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
-        sig = '>' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
+        sig = '<' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
         i = instance['data'].unpack_from(sig, offset.rounded())[0]
-        mask = self._mask(size) << self._mask_offset(offset.bit, size)
-        return ((i & mask) >> self._mask_offset(offset.bit, size))
+        mask = self._mask(size) << offset.bit
+        return ((i & mask) >> offset.bit)
 
     def encode(self, instance, offset, value):
         size = self.__get__(instance)['size']
         log2 = {1: 0, 2: 1, 4: 2, 8: 3}
-        sig = '>' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
+        sig = '<' + 'BHIQ'[log2[(size + sco.Size(bit=offset.bit)).rounded()]]
         i = instance['data'].unpack_from(sig, offset.rounded)[0]
-        mask = self._mask(size) << self._mask_offset(offset.bit, size)
-        res = (i & ((~mask) & 0xffff))
-        res |= (value & self._mask(size)) << self._mask_offset(offset.bit, size)
+        mask = self._mask(size) << offset.bit
+        res = (i & (~mask))
+        res |= (value & self._mask(size)) << offset.bit
         instance['data'].pack_into(sig, offset.rounded(), res)
 
     def _mask(self, size):
         return ((1 << (size.byte * 8 + size.bit)) - 1)
-
-    def _mask_offset(self, bit, size):
-        return (8 * size.rounded() - bit - (size.byte * 8 + size.bit))
 
 
 class BitMaskField(IntField):
