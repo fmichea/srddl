@@ -86,6 +86,9 @@ class _SrddlInternal(AbstractMappedValue):
     def _hex(self, flags):
         return self._hexify(self._data)
 
+    def _raw(self, flags):
+        return self._extract_raw(self._data)
+
     def _value(self, flags):
         return self._apply_all([], 'value', fn=lambda x: [x])
 

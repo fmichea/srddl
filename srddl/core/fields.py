@@ -131,7 +131,8 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
 #            id(self), self['value']
 #        )
 #
-    def _hexify(self, data):
+
+    def _extract_raw(self, data):
         # Unpack the complete data.
         f = '{}s'.format(self['size'].rounded())
         d = bytearray(data.unpack_from(f, self['offset'].rounded())[0])
@@ -141,7 +142,10 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
         s = self['size'].bit + (self['offset'].bit if not self['size'].byte else 0)
         d[-1] = d[-1] & ((0xff << (8 - s if s else 0)) & 0xff)
         # Hexify, we are done!
-        return binascii.hexlify(d)
+        return d
+
+    def _hexify(self, data):
+        return binascii.hexlify(self._extract_raw(data))
 
     @scnd.abstractproperty()
     def _offset(self, flags):
@@ -153,6 +157,10 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
 
     @scnd.abstractproperty()
     def _hex(self, flags):
+        pass
+
+    @scnd.abstractproperty()
+    def _raw(self, flags):
         pass
 
 
@@ -198,6 +206,9 @@ class BoundValue(AbstractMappedValue):
             # Force decoding of value for those fields.
             _ = self['value']
         return super().__getitem__(item)
+
+    def _raw(self, flags):
+        return self._extract_raw(self._instance['data'])
 
     def _hex(self, flags):
         return self._hexify(self._instance['data'])
