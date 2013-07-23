@@ -93,11 +93,6 @@ class Value(scnd.NamedDict):
     class Meta:
         init_props = ['value', 'name', 'description']
 
-#    def __repr__(self):
-#        return '<Value at {:#x} with value {}>'.format(
-#            id(self), self['value']
-#        )
-
     @scnd.abstractproperty()
     def _value(self, flags):
         pass
@@ -124,12 +119,6 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
     class Meta(Value.Meta):
         init_props = ['offset'] + Value.Meta.init_props
 
-#    def __repr__(self):
-#        return '<MappedValue at {:#x} with value {}>'.format(
-#            id(self), self['value']
-#        )
-#
-
     def _extract_raw(self, data):
         # Unpack the complete data.
         f = '{}s'.format(self['size'].rounded())
@@ -139,7 +128,6 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
         # Remove trailing bits not included in the mapped value.
         s = self['size'].bit + (self['offset'].bit if not self['size'].byte else 0)
         d[-1] = d[-1] & ((0xff << (8 - s if s else 0)) & 0xff)
-        # Hexify, we are done!
         return d
 
     def _hexify(self, data):
@@ -184,20 +172,6 @@ class BoundValue(AbstractMappedValue):
     def __init__(self, instance, field, offset, valid):
         super().__init__(field, offset)
         self._instance, self._valid_func = instance, valid
-
-#    def __repr__(self):
-#        res = '<{} at {:#x}'.format(self.__class__.__name__, id(self))
-#        value = self['value']
-#        if value is not None:
-#            res += ' with value {}'.format(repr(value))
-#        res += '>'
-#        return res
-#
-#    def __str__(self):
-#        res = ' '.join(repr(self).split()[:5])
-#        if res.endswith('>'):
-#            return res
-#        return '{} {}>'.format(res, self['display_value'])
 
     def __getitem__(self, item):
         if item != 'value' and item in Value.__nd_props__:
