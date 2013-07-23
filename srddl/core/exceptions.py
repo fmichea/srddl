@@ -25,6 +25,21 @@ class NoMetaConfError(Exception):
 # ----- NamedDict Exceptions ---------------------------------------------------
 
 class NamedDictAbstractPropertyError(Exception):
+    '''
+    This exception is raised when an instance of a sub-class of a
+    NamedDict is created but this class still has abstract properties. A
+    NamedDict must have all its properties implemented or set by the
+    constructor of the class.
+
+    Those checks are done even before the method ``__init__`` of the
+    class is called.
+
+    :param klass: The class which instance was requested.
+    :param props: The name of the abstract properties unimplemented.
+    :param reason: The reason why the property is still considered
+                   abstract.
+    '''
+
     def __init__(self, klass, props, reason):
         self.klass, self.props, self.reason = klass, props, reason
 
