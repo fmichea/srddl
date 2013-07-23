@@ -52,15 +52,25 @@ class NamedDictAbstractPropertyError(Exception):
 
 
 class NamedDictPropertyFlagsError(Exception):
-    def __init__(self, klass, attr_name, flags):
-        self.klass, self.attr_name, self.flags = klass, attr_name, flags
+    '''
+    This error means that a property was requested with a flag that is
+    not known. For properties' flags, the strictness was choosen since
+    flags are just part of the string, so a typo is easy to do.
+
+    :param klass: The class on which the property was requested.
+    :param propname: The name of the property that was requested.
+    :param flags: A list of flags that are not known to the property.
+    '''
+
+    def __init__(self, klass, propname, flags):
+        self.klass, self.propname, self.flags = klass, propname, flags
 
     def __str__(self):
         flags = ', '.join(self.flags)
-        res = 'Can\'t fetch value for property {attr_name} in class {klass}. '
+        res = 'Can\'t fetch value for property {propname} in class {klass}. '
         res += 'Flag' + ('s ' if 1 < len(self.flags) else '') + ' {flags} '
         res += ('are' if 1 < len(self.flags) else 'is') + ' not known.'
-        return res.format(klass=self.klass, attr_name=self.attr_name, flags=flags)
+        return res.format(klass=self.klass, propname=self.propname, flags=flags)
 
 
 class NamedDictPropertyRedefinitionError(Exception):
