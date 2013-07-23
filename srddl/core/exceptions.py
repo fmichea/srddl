@@ -74,6 +74,17 @@ class NamedDictPropertyFlagsError(Exception):
 
 
 class NamedDictPropertyRedefinitionError(Exception):
+    '''
+    There are certain cases where a property can't be defined again. You
+    can't, for instance, define a property as abstract when it was
+    already implemented in one of the parents of the class. The reason
+    given should give you a real insgiht into what went wrong.
+
+    :param klass: The class in which the property is defined again.
+    :param propname: The name of the redefined property.
+    :param reason: The reason why the redefinition failed.
+    '''
+
     def __init__(self, klass, propname, reason):
         self.klass, self.propname, self.reason = klass, propname, reason
 
