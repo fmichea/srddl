@@ -126,6 +126,12 @@ class Value(scnd.NamedDict):
 
 
 class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
+    '''
+    This class holds the different properties shared by anything that is mapped
+    (like strutures or fields). Any mappable value should inherit at least from
+    this class and implement the different abstract properties it declares.
+    '''
+
     class Meta(Value.Meta):
         init_props = ['offset'] + Value.Meta.init_props
 
@@ -145,18 +151,33 @@ class AbstractMappedValue(Value, metaclass=_MetaAbstractMappedValue):
 
     @scnd.abstractproperty()
     def _offset(self, flags):
+        '''The offset where the mapped value starts in the data.'''
         pass
 
     @scnd.abstractproperty(flags=['static'])
     def _size(self, flags):
+        '''
+        The size of the mapped value as a :class:`srddl.core.offset.Size`
+        instance.
+        '''
         pass
 
     @scnd.abstractproperty()
     def _hex(self, flags):
+        '''
+        This property represents the data as an hexadecimal string that is the
+        the data under the mapped value. It is the size of the mapped value
+        rounded to the upper byte if the value is not aligned.
+        '''
         pass
 
     @scnd.abstractproperty()
     def _raw(self, flags):
+        '''
+        This property represents the raw data of the complete mapped value. It
+        is a bytearray, with a size rounded to the upper byte of the size of the
+        mapped value.
+        '''
         pass
 
 
