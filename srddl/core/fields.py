@@ -23,7 +23,8 @@ class _MetaAbstractMappedValue(scnd._MetaNamedDict, sch.MetaAbstractDescriptor):
 class _MetaAbstractField(_MetaAbstractMappedValue):
     '''
     This meta-class will make sure that initialization of a Field is done
-    correctly.
+    correctly. To do so, it will wrap some methods of a class with its own
+    functions and do some checks for the field.
     '''
 
     def __new__(cls, clsname, bases, kwds):
