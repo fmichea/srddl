@@ -96,6 +96,13 @@ class NamedDictPropertyRedefinitionError(Exception):
 # ----- File types loader ------------------------------------------------------
 
 class FileTypeNameError(Exception):
+    '''
+    This exception is raised when to FileTypes share the same ``name``
+    property.
+
+    :param name: The name of the file.
+    '''
+
     def __init__(self, name):
         self.name = name
 
