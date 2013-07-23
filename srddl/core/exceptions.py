@@ -6,9 +6,9 @@
 
 class NoMetaConfError(Exception):
     '''
-    This exception is raised when a Meta configuration is not found for a
-    class. Metaconf are used as variables configuring the behavior of a
-    subclass of an abstract class.
+    This exception is raised when a Meta configuration is not found for a class.
+    Metaconf are used as variables configuring the behavior of a subclass of an
+    abstract class.
 
     :param klass: The class on which the metaconf function was called.
     :param name: The name of the configuration value requested.
@@ -26,10 +26,9 @@ class NoMetaConfError(Exception):
 
 class NamedDictAbstractPropertyError(Exception):
     '''
-    This exception is raised when an instance of a sub-class of a
-    NamedDict is created but this class still has abstract properties. A
-    NamedDict must have all its properties implemented or set by the
-    constructor of the class.
+    This exception is raised when an instance of a sub-class of a NamedDict is
+    created but this class still has abstract properties. A NamedDict must have
+    all its properties implemented or set by the constructor of the class.
 
     Those checks are done even before the method ``__init__`` of the
     class is called.
@@ -53,9 +52,9 @@ class NamedDictAbstractPropertyError(Exception):
 
 class NamedDictPropertyFlagsError(Exception):
     '''
-    This error means that a property was requested with a flag that is
-    not known. For properties' flags, the strictness was choosen since
-    flags are just part of the string, so a typo is easy to do.
+    This error means that a property was requested with a flag that is not
+    known. For properties' flags, the strictness was choosen since flags are
+    just part of the string, so a typo is easy to do.
 
     :param klass: The class on which the property was requested.
     :param propname: The name of the property that was requested.
@@ -75,10 +74,10 @@ class NamedDictPropertyFlagsError(Exception):
 
 class NamedDictPropertyRedefinitionError(Exception):
     '''
-    There are certain cases where a property can't be defined again. You
-    can't, for instance, define a property as abstract when it was
-    already implemented in one of the parents of the class. The reason
-    given should give you a real insgiht into what went wrong.
+    There are certain cases where a property can't be defined again. You can't,
+    for instance, define a property as abstract when it was already implemented
+    in one of the parents of the class. The reason given should give you a real
+    insgiht into what went wrong.
 
     :param klass: The class in which the property is defined again.
     :param propname: The name of the redefined property.
@@ -97,8 +96,7 @@ class NamedDictPropertyRedefinitionError(Exception):
 
 class FileTypeNameError(Exception):
     '''
-    This exception is raised when to FileTypes share the same ``name``
-    property.
+    This exception is raised when to FileTypes share the same ``name`` property.
 
     :param name: The name of the file.
     '''
