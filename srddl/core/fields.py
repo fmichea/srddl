@@ -17,8 +17,6 @@ from srddl.core.offset import Offset, Size
 
 FieldInitStatus = sch.enum(KO=0, INIT=1, OK=2)
 
-REFERENCE_SIGNAL = Signal('current-ref')
-
 class _MetaAbstractMappedValue(scnd._MetaNamedDict, sch.MetaAbstractDescriptor):
     pass
 
