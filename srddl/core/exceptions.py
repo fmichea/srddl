@@ -5,6 +5,15 @@
 # ----- Helpers ----------------------------------------------------------------
 
 class NoMetaConfError(Exception):
+    '''
+    This exception is raised when a Meta configuration is not found for a
+    class. Metaconf are used as variables configuring the behavior of a
+    subclass of an abstract class.
+
+    :param klass: The class on which the metaconf function was called.
+    :param name: The name of the configuration value requested.
+    '''
+
     def __init__(self, klass, name):
         self.klass, self.name = klass, name
 
