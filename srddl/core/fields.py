@@ -82,13 +82,9 @@ class _MetaAbstractField(_MetaAbstractMappedValue):
 class Value(scnd.NamedDict):
     '''
     The Value class is used by the ``values`` keyword parameter of certain
-    fields. It is used to define documentation on values possible. The usage
-    of this values is dependent on the Field, see their documentation.
-
-    The Value exports the following attributes:
-        - value
-        - name
-        - description
+    fields. It is used to define documentation on possibe values. The usage of
+    this values is dependent on the actual field, see their respective
+    documentation.
     '''
 
     class Meta:
