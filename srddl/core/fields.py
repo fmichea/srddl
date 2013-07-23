@@ -92,18 +92,31 @@ class Value(scnd.NamedDict):
 
     @scnd.abstractproperty()
     def _value(self, flags):
+        '''
+        This is the actual value in a builtin type, like an int or a bytearray.
+        Most fields will compare this value to the data unpacked to decide if
+        the data is indeed described by this Value.
+        '''
         pass
 
     @scnd.property()
     def _name(self, flags):
+        '''
+        This is the short name for the Value. It usually is the name of a
+        constant, like a define as would be found in a C header.
+        '''
         pass
 
     @scnd.property()
     def _description(self, flags):
+        '''This property holds a long description of the field.'''
         pass
 
     @scnd.property(flags=['verbose'])
     def _display_value(self, flags):
+        '''
+        This property returns a comprehensible string describing the value.
+        '''
         res = str(self['value'])
         if self['name'] is not None:
             res = '{}'.format(self['name'])
