@@ -61,6 +61,7 @@ Frontends
 
  - curses: Continue the implementation of the curses front-end.
 
+ - GUI: Make a try to write this in C++ . Looks worth a try.
  - GUI: Add a way to edit the file in the hex view, with selection etc.
  - GUI: Add a way to edit fields directly. It would be awesome to be able to be
         able to select options available per field to manipulate this edit form.
