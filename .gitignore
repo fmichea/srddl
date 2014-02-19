@@ -1,1 +1,5 @@
+*.egg
+build
+dist
 srddl.egg-info
+venv
