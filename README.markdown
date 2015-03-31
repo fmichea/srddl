@@ -16,29 +16,31 @@ Examples
 Here is a simple example, that might give you a better idea of what is a basic
 usage of srddl:
 
-    import srddl.data as sd
-    import srddl.fields as sf
-    import srddl.models as sm
+```python
+import srddl.data as sd
+import srddl.fields as sf
+import srddl.models as sm
 
-    class A(sm.Struct):
-        length = sf.IntField()
-        data = sf.ArrayField(length, sf.IntField())
+class A(sm.Struct):
+    length = sf.IntField()
+    data = sf.ArrayField(length, sf.IntField())
 
-    # This data is read-only (automatic detection).
-    data = '0a00010203040506070809'
-    data = sd.Data(bytes.fromhex(data))
+# This data is read-only (automatic detection).
+data = '0a00010203040506070809'
+data = sd.Data(bytes.fromhex(data))
 
-    # We will map structure A from offset 0 of data.
-    a = A(data, 0)
+# We will map structure A from offset 0 of data.
+a = A(data, 0)
 
-    # Now we can play!
-    print('Complete struture:', a)
-    print('Length', a.length, a.length == 10, a.length['value'], sep=' | ')
-    print('Data:', a.data, a.data[0] == 0, a.data[9] == 9, sep=' | ')
+# Now we can play!
+print('Complete struture:', a)
+print('Length', a.length, a.length == 10, a.length['value'], sep=' | ')
+print('Data:', a.data, a.data[0] == 0, a.data[9] == 9, sep=' | ')
 
-    # If data is not read-only, we can modify values, but if we change length,
-    # data size is not affected yet (in TODO).
-    # example: a.length = 5 # changes the first byte to 5 instead of 10.
+# If data is not read-only, we can modify values, but if we change length,
+# data size is not affected yet (in TODO).
+# example: a.length = 5 # changes the first byte to 5 instead of 10.
+```
 
 You can find some more examples in `examples/` directory and a more complete
 file decoder in `srddl/filetypes/` directory.
